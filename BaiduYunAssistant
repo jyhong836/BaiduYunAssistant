@@ -1,3 +1,6 @@
 #!/bin/bash
 cd bin
+# You can replace the "~/Development/jre1.7.0_51" with your jre folder;
+# Or just use the "java" to replace the "~/Development/jre1.7.0_51/bin/java",
+# if you have install jre and set the env well.
 ~/Development/jre1.7.0_51/bin/java com.BaiduYunAssistant

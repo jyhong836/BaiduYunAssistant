@@ -91,6 +91,9 @@ public class BaiduYunAssistant extends JFrame
 							WindowListener,
 							Serializable, MouseListener {
 	/**
+	 * TODO:如果出故障了，应当有功能按键允许用户重新新建一个JFrame
+	 */
+	/**
 	 * @serial
 	 * serialVersionUID的作用是当修改了class的程序之后，把早期版本保存的同名类
 	 * 用ObjectReader读入时，会根据serialVersionUID是否相同来判断是否要进行读
@@ -145,7 +148,7 @@ public class BaiduYunAssistant extends JFrame
 //	private StringBuffer cmdBuf = null;
 	private ArrayBlockingQueue<String> cmdBuf;
 	private double cloudSpace = 0;
-	private double usedSpace = 1;
+	private double usedSpace = 0;
 
 	public BaiduYunAssistant(BaiduYunAssistant bya) {
 		System.out.println(this.hashCode());
@@ -547,7 +550,7 @@ public class BaiduYunAssistant extends JFrame
 			oos.writeObject(this);
 			
 			//TODO:DELETE THIS LINE BEFORE COMMIT
-			dataFile.delete();
+//			dataFile.delete();
 			
 			oos.close();
 		} catch (FileNotFoundException e) {
@@ -753,7 +756,6 @@ public class BaiduYunAssistant extends JFrame
 		downloadButton = new JButton("Download");
 		downloadButton.addActionListener(this);
 		this.add(downloadButton);
-//		gbc.gridwidth = 1;
 		mainLayout.setConstraints(uploadButton, gbc);
 		//----------newDir--------
 		newDirButton = new JButton("New Dir");
@@ -763,7 +765,7 @@ public class BaiduYunAssistant extends JFrame
 		//----------sync-------
 		syncButton = new JButton("Sync");
 		syncButton.addActionListener(this);
-		this.add(syncButton);
+//		this.add(syncButton);
 		mainLayout.setConstraints(syncButton, gbc);
 		
 	}
