@@ -15,7 +15,6 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
 
 import javax.swing.JDialog;
 import javax.swing.JScrollPane;
@@ -26,7 +25,11 @@ import javax.swing.JTextArea;
  *
  */
 public class HelpDialog extends JDialog {
-//	private final String dataFolderString = new String("data/");
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -6708802562022972110L;
 
 	/**
 	 * 
@@ -77,7 +80,7 @@ public class HelpDialog extends JDialog {
 		JTextArea helpTextArea = new JTextArea();
 		JScrollPane scrollPane = new JScrollPane(helpTextArea);
 		helpTextArea.setLineWrap(true);
-		File helpFile = new File(BaiduYunAssistant.dataFolderString+"help.dat");
+		File helpFile = new File(BaiduYunAssistant.dataFolderString+"help");
 //		StringBuffer bs = new StringBuffer();
 		String bufString;
 		try {
@@ -86,6 +89,7 @@ public class HelpDialog extends JDialog {
 			while ((bufString = br.readLine())!=null){
 				helpTextArea.append("\n"+bufString);
 			}
+			br.close();
 		} catch (FileNotFoundException e) {
 			helpTextArea.append("Cannot find help file, you can use 'bypy' to get the help");
 		} catch (IOException e) {
