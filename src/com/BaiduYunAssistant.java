@@ -15,24 +15,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-//import javax.swing.JList;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//-----------------
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
@@ -53,35 +37,16 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.net.URISyntaxException;
-//-----------------
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
-//import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Iterator;
 import java.util.concurrent.ArrayBlockingQueue;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 //import java.util.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
 
@@ -106,7 +71,20 @@ public class BaiduYunAssistant extends JFrame
 	 *  这里serialVersionUID设置成让eclipse自动生成了，每次修改之后eclipse都
 	 *  会更新UID，这里的修改仅限于类函数和变量的增减，内容的改变不会起作用
 	 */
-	private static final long serialVersionUID = 1000L;
+	private static final long serialVersionUID = getUID();//System.currentTimeMillis();//10001L;
+	/**
+	 * generate UID specific for access token
+	 * @return 
+	 */
+	private static long getUID() {
+		char[] tokenString = checkTokenFile().toCharArray();
+		long UID = 0;
+		for (char c:tokenString) {
+			UID += (long)c;
+		}
+		UID += 10001010010001L;
+		return UID;
+	}
 	
 	private GridBagLayout mainLayout;
 	private GridBagConstraints gbc;
@@ -140,6 +118,7 @@ public class BaiduYunAssistant extends JFrame
 	private JButton uploadButton;
 	private JButton downloadButton;
 	private JButton newDirButton;
+	private JButton deleteButton;
 	private JButton syncButton;
 	
 	/* parameters */
@@ -289,14 +268,17 @@ public class BaiduYunAssistant extends JFrame
 		{
 			FileDialog fileDialog = new FileDialog(this, "upload", FileDialog.LOAD);
 			fileDialog.setVisible(true);
-			if(fileDialog.getFile()!=null) {
+			if(fileDialog.getDirectory()!=null) {
 				String fileName = fileDialog.getDirectory();
-				fileName = fileName + fileDialog.getFile();
-				System.out.println(fileName);
+				if (fileDialog.getFile()!=null)
+					fileName = fileName + fileDialog.getFile();
+//				System.out.println(fileName);
 				try {
+					System.out.println("upload "+fileName);
 					this.runCommand("upload "+fileName);
+					this.ListFile(null);
 				} catch (IOException e1) {
-					// TODO Auto-generated catch block
+					JOptionPane.showMessageDialog(this, "cannot upload");
 					e1.printStackTrace();
 				}
 			}
@@ -342,7 +324,7 @@ public class BaiduYunAssistant extends JFrame
 		else if (e.getSource().equals(this.aboutItem))
 		{
 			JOptionPane.showMessageDialog(this, 
-					"Copyright 2014 Junyuan Hong\nLICENSE under GPL v3");
+					"Copyright 2014 Junyuan Hong\n  LICENSE under GPL v3");
 		}
 		else if (e.getSource().equals(this.cmdhelpItem))
 		{
@@ -357,6 +339,32 @@ public class BaiduYunAssistant extends JFrame
 			} catch (IOException e1) {
 				e1.printStackTrace();
 			}
+		}
+		else if (e.getSource().equals(deleteButton))
+		{
+			int row = fileListTable.getSelectedRow();
+			if (row==-1){
+				JOptionPane.showMessageDialog(this, 
+						"Please select a file");
+				return;
+			}
+			String fileName = (String)this.tableModel.getValueAt(row, 1);
+			if (fileName.equals("..")||fileName==null) {
+				JOptionPane.showMessageDialog(this, 
+						"Please select a file");
+			}
+			try {
+				this.runCommand("delete "+this.pwd+"/"+fileName);
+				this.ListFile(null);
+			} catch (IOException e1) {
+				JOptionPane.showMessageDialog(this, 
+						"Error occured when execute bypy command");
+			}
+		}
+		else if(e.getSource().equals(syncButton))
+		{
+			//----------compare files----------
+			System.out.println("Sync");
 		}
 		
 	}
@@ -410,7 +418,7 @@ public class BaiduYunAssistant extends JFrame
 		return;
 	}
 	
-	private void runCommand(String cmd) throws IOException {
+	protected void runCommand(String cmd) throws IOException {
 		try{
 			this.cmdBuf.add(cmd);
 		}catch(IllegalStateException e1){
@@ -685,30 +693,10 @@ public class BaiduYunAssistant extends JFrame
 	private void initAccessToken() {
 		tokenTextField_lb = new JLabel("PCS Token");
 		tokenTextField = new JTextField();
-		try{
-			// chech for PCS authorize file
-			File file = new File(System.getProperties().getProperty("user.home")+"/.bypy.json");
-			if (!file.exists()){
-				JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
-				System.exit(-1);
-			}
-			else {
-				FileInputStream fis = new FileInputStream(file);
-				BufferedReader br = new BufferedReader(new InputStreamReader(fis));
-				String data = br.readLine().substring(1);
-				String [] datalist = data.split("\"");
-				if (!datalist[1].equals("access_token")){
-					JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
-					System.exit(-1);
-				}else {
-					tokenTextField.setText(datalist[3]);
-					tokenTextField.setEnabled(false);
-				}
-				br.close();
-			}
-		}catch (Exception e) {
-			// TODO: handle exception
-			e.printStackTrace();
+		String tokenString =  this.checkTokenFile();
+		if (tokenString!=null) {
+			tokenTextField.setText(tokenString);
+			tokenTextField.setEnabled(false);
 		}
 		// 布局设置
 		this.add(tokenTextField_lb);
@@ -738,6 +726,36 @@ public class BaiduYunAssistant extends JFrame
 		
 	}
 
+	private static String checkTokenFile() {
+		try{
+			// chech for PCS authorize file
+			File file = new File(System.getProperties().getProperty("user.home")+"/.bypy.json");
+			if (!file.exists()){
+//				JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
+				System.exit(-1);
+			}
+			else {
+				FileInputStream fis = new FileInputStream(file);
+				BufferedReader br = new BufferedReader(new InputStreamReader(fis));
+				String data = br.readLine().substring(1);
+				String [] datalist = data.split("\"");
+				if (!datalist[1].equals("access_token")){
+//					JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
+					System.exit(-1);
+				}else {
+					br.close();
+					return datalist[3];
+				}
+				br.close();
+			}
+		}catch (Exception e) {
+//			JOptionPane.showMessageDialog(this, 
+//					"ERROR when check for Access Token file");
+		}
+		return null;
+	}
+
+
 	private void initButtons() {
 		//--------refresh--------
 		refreshButton = new JButton("Refresh");
@@ -762,10 +780,15 @@ public class BaiduYunAssistant extends JFrame
 		newDirButton.addActionListener(this);
 		this.add(newDirButton);
 		mainLayout.setConstraints(newDirButton, gbc);
+		//----------delete-----
+		deleteButton = new JButton("Delete");
+		deleteButton.addActionListener(this);
+		this.add(deleteButton);
+		mainLayout.setConstraints(deleteButton, gbc);
 		//----------sync-------
 		syncButton = new JButton("Sync");
 		syncButton.addActionListener(this);
-//		this.add(syncButton);
+		this.add(syncButton);
 		mainLayout.setConstraints(syncButton, gbc);
 		
 	}
