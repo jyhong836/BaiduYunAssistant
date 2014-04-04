@@ -15,3 +15,9 @@ LINSENCE:under GPL v3
 
 百度云ubuntu GUI客户端，基于https://github.com/houtianze/bypy 的python命令行工具，需要将bypy.py添加到/usr/bin/bypy，你可以使用：
 $ ln -s <bypy.py> /usr/bin/bypy
+
+//////////
+更新
+/////////
+添加了Refresh, Download, Upload, New Dir按钮
+添加Help菜单->Help/about
