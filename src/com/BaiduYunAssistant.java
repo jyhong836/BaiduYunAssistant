@@ -54,8 +54,10 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
+
 
 
 
@@ -82,8 +84,9 @@ import javax.swing.JOptionPane;
 public class BaiduYunAssistant extends JFrame 
 				implements ActionListener, 
 							KeyListener,
-							WindowListener,
-							Serializable, MouseListener {
+							WindowListener, 
+							MouseListener,
+							Serializable {
 	/**
 	 * @serial
 	 * serialVersionUID的作用是当修改了class的程序之后，把早期版本保存的同名类
@@ -97,20 +100,20 @@ public class BaiduYunAssistant extends JFrame
 	 *  这里serialVersionUID设置成让eclipse自动生成了，每次修改之后eclipse都
 	 *  会更新UID，这里的修改仅限于类函数和变量的增减，内容的改变不会起作用
 	 */
-	private static final long serialVersionUID = getUID();//System.currentTimeMillis();//10001L;
+	private static final long serialVersionUID = 1L;//getUID();//System.currentTimeMillis();//10001L;
 	/**
 	 * generate UID specific for access token
 	 * @return 
 	 */
-	private static long getUID() {
-		char[] tokenString = checkTokenFile().toCharArray();
-		long UID = 0;
-		for (char c:tokenString) {
-			UID += (long)c;
-		}
-		UID += 10001010010001L;
-		return UID;
-	}
+//	private static long getUID() {
+//		char[] tokenString = checkTokenFile().toCharArray();
+//		long UID = 0;
+//		for (char c:tokenString) {
+//			UID += (long)c;
+//		}
+//		UID += 10001010010001L;
+//		return UID;
+//	}
 	
 	private GridBagLayout mainLayout;
 	private GridBagConstraints gbc;
@@ -146,19 +149,19 @@ public class BaiduYunAssistant extends JFrame
 	private JButton newDirButton;
 	private JButton deleteButton;
 	private JButton syncButton;
+	private JButton searchButton;
 	
 	/* parameters */
 	public final static String dataFolderString = new String("data/");
-	private String pwd; // currunt pwd
-//	private StringBuffer cmdBuf = null;
 	private ArrayBlockingQueue<String> cmdBuf;
+	//--------TO be Moved--------
+	private String pwd; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
 	private Vector<RunCommandThread> taskVector;
+	//--------END:tO be Moved--------
 	
-	Image splashImage;
-	private int splashWidth = 200;
-	private int splashHeight = 200;
+//	private Image splashImage;
 	private int framewidth = 800;
 	private int frameheight = 600;
 
@@ -167,31 +170,20 @@ public class BaiduYunAssistant extends JFrame
 		
 		//----------splash----------
 		//TODO:--Window这个类满有意思的可以研究一下----
-		Window splashWindow = new Window(this);
-		//下面这样做，在后面将无法获得图片的尺寸，ImageIO才真正将图片载入
-//		splashImage = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");
+		SplashWindow splashWindow;
 		try {
-			splashImage = ImageIO.read(new File("data/BaiduYunSplash.png"));
-			splashWidth = splashImage.getWidth(splashWindow);
-			splashHeight = splashImage.getHeight(splashWindow);
-			Canvas canvas = new Canvas(){
-				public void paint(Graphics g) {
-					g.drawImage(BaiduYunAssistant.this.splashImage, 0,0, this);
-					g.drawString("Copyright 2014 JunyuanHong", 40, 220);
-					g.drawString("LICENSE under GPLv3", 65, 238);
-				}
-			};
-			splashWindow.add(canvas);
-			splashWindow.setBounds((int)screenSize.getWidth()/2 - splashWidth/2,
-					(int)screenSize.getHeight()/2 - splashHeight/2,
-					splashWidth,
-					splashHeight);
-			splashWindow.setAlwaysOnTop(false);
-			splashWindow.setVisible(true);
+			splashWindow = new SplashWindow(this, ImageIO.read(new File("data/BaiduYunSplash.png")));
 		} catch (IOException e1) {
-			System.out.println("cannot find splash png, ignore it.\n Or you may check for the data/BaiduYun.png");
+			System.out.println("Cannot read splash file");
+			splashWindow = null;
 		}
+		splashWindow.setText("Copyright 2014 Junyuan Hong");
+		//----------END:splash--------
 		
+		//--------check access token--------
+		this.checkTokenFile();
+		
+		//---------init JFrame---------
 //		System.out.println(this.hashCode());
 //		this.setFont(new Font(Font.MONOSPACED,Font.ITALIC,12));
 		if(bya!=null)
@@ -263,7 +255,8 @@ public class BaiduYunAssistant extends JFrame
 		
 		this.setLayout(mainLayout);
 //		this.setResizable(false);
-		splashWindow.setVisible(false);
+//		if (splashWindow!=null)
+//			splashWindow.setVisible(false);
 		this.setVisible(true);
 	}
 
@@ -275,9 +268,27 @@ public class BaiduYunAssistant extends JFrame
 //		for (UIManager.LookAndFeelInfo info:UIManager.getInstalledLookAndFeels()) {
 //			System.out.println(info);
 //		}
+		//---------check System----------
 		System.out.println(
 				UIManager.getCrossPlatformLookAndFeelClassName()+"\n"
 				+UIManager.getSystemLookAndFeelClassName());
+		Properties props=System.getProperties(); //获得系统属性集   
+		String osName = props.getProperty("os.name"); //操作系统名称    
+		String osArch = props.getProperty("os.arch"); //操作系统构架    
+		String osVersion = props.getProperty("os.version"); //操作系统版本 
+		String jreVersion = props.getProperty("java.specification.version");
+		System.out.println(osName+" "+osArch+" "+osVersion);
+		if (!osName.equals("Linux")) {
+			System.out.println("Not a Linux System, exit");
+			return;
+		}
+		if (Double.valueOf(jreVersion)<1.6) {
+			System.out.println("WARNING:the JRE version("
+					+jreVersion
+					+") is lower than 1.6");
+			return;
+		}
+		//-----------UIManage------------
 		try {
 			try {
 				UIManager.setLookAndFeel(
@@ -300,7 +311,10 @@ public class BaiduYunAssistant extends JFrame
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			}
 		} catch(Exception e) {
+			System.out.println("some unknown error occurred, you may report it");
 		}
+		//---------END:UIManage-----------
+		
 		
 		System.out.println("Thank you for using Baidu Yun Assistant");
 		System.out.println("Coyright 2014 Junyuan Hong ( GitHub: jyhong836 )");
@@ -478,6 +492,16 @@ public class BaiduYunAssistant extends JFrame
 		{
 			//----------compare files----------
 			System.out.println("Sync");
+		}
+		else if (e.getSource().equals(searchButton))
+		{
+			//--------search----------
+			String filter = JOptionPane.showInputDialog("Filter:");
+			try {
+				this.runCommand("search "+filter);
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
 		}
 		
 	}
@@ -678,6 +702,8 @@ public class BaiduYunAssistant extends JFrame
 			System.out.println("Cannot open save file BYA.dat when windows closing");
 		} catch (IOException e) {
 			System.out.println("Write file failed when windows closing");
+			System.out.println(this);
+			e.printStackTrace();
 		} finally {
 			System.out.println("Exit window");
 			System.exit(0);
@@ -840,13 +866,16 @@ public class BaiduYunAssistant extends JFrame
 		
 	}
 
-	private static String checkTokenFile() {
+	private String checkTokenFile() {
 		try{
 			// chech for PCS authorize file
 			File file = new File(System.getProperties().getProperty("user.home")+"/.bypy.json");
 			if (!file.exists()){
-//				JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
+				JOptionPane.showMessageDialog(this, 
+						"ERROR:have not Authorized\ncannot find ~/.bypy.json\n you may have not install bypy correctly");
 				System.exit(-1);
+//				System.out.println("No Token file, please check if ~/.bypy.json exists");
+//				return null;
 			}
 			else {
 				FileInputStream fis = new FileInputStream(file);
@@ -854,7 +883,7 @@ public class BaiduYunAssistant extends JFrame
 				String data = br.readLine().substring(1);
 				String [] datalist = data.split("\"");
 				if (!datalist[1].equals("access_token")){
-//					JOptionPane.showMessageDialog(this, "ERROR:have not Authorized\ncannot find ~/.bypy.json");
+					JOptionPane.showMessageDialog(this, "ERROR:there is no access token in ~/.bypy.json\n you may have not install bypy correctly");
 					System.exit(-1);
 				}else {
 					br.close();
@@ -863,8 +892,9 @@ public class BaiduYunAssistant extends JFrame
 				br.close();
 			}
 		}catch (Exception e) {
-//			JOptionPane.showMessageDialog(this, 
-//					"ERROR when check for Access Token file");
+			JOptionPane.showMessageDialog(this, 
+					"ERROR when check for Access Token file\n you may have not install bypy correctly");
+			System.exit(-1);
 		}
 		return null;
 	}
@@ -904,6 +934,11 @@ public class BaiduYunAssistant extends JFrame
 		syncButton.addActionListener(this);
 		this.add(syncButton);
 		mainLayout.setConstraints(syncButton, gbc);
+		//--------search---------
+		searchButton = new JButton("Search");
+		searchButton.addActionListener(this);
+		this.add(searchButton);
+		mainLayout.setConstraints(searchButton, gbc);
 		
 	}
 	
