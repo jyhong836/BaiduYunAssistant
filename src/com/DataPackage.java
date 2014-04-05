@@ -5,6 +5,7 @@ package com;
 
 import java.io.Serializable;
 import java.util.Vector;
+
 import javax.swing.JTree;
 
 /**
@@ -25,11 +26,21 @@ public class DataPackage implements Serializable{
 	protected double cloudSpace = 0;
 	protected double usedSpace = 0;
 	protected Vector<RunCommandThread> taskVector;
+	protected Vector<String> syncFiles;
+	protected Vector<String> remoteSyncFiles;
 
 	/**
 	 * 
 	 */
 	public DataPackage() {
+	}
+	
+	public void checkData() {
+//		System.out.println("DATA CHECK:");
+//		for (int i = 0; i < this.syncFiles.size(); i++) {
+//			System.out.println(i+":"+this.syncFiles.elementAt(i)+"\n---->"+this.remoteSyncFiles.elementAt(i));
+//			
+//		}
 	}
 
 }

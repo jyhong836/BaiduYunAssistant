@@ -122,10 +122,13 @@ public class BaiduYunAssistant
 	/*---------Left Grid Layout-----------*/
 	/* Menu */
 	private JMenuBar menuBar;
+	//--help--
 	private JMenu helpMenu;
 	private JMenuItem aboutItem;
 	private JMenuItem cmdhelpItem;
-	private final HelpDialog helpDialog = new HelpDialog(this, "Command Help");;
+	private final HelpDialog helpDialog = new HelpDialog(this, "Command Help");
+	private JMenu optionMenu;
+	private JMenuItem settingsItem;
 	
 	/* component */
 	private JPanel jp1;
@@ -165,12 +168,14 @@ public class BaiduYunAssistant
 	/* parameters */
 	public final static String dataFolderString = new String("data/");
 	private ArrayBlockingQueue<String> cmdBuf;
-	//--------TO be Moved--------
+	//-----------------------
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
 	private Vector<RunCommandThread> taskVector;
-	//--------END:tO be Moved--------
+	//-----------------------
+	protected Vector<String> syncFiles;
+	protected Vector<String> remoteSyncFiles;
 	private JTree fileTree;
 	private DataPackage datapackage;
 	
@@ -212,9 +217,14 @@ public class BaiduYunAssistant
 			this.usedSpace = datapackage.usedSpace;
 			this.taskVector = datapackage.taskVector;
 			this.fileTree = datapackage.fileTree;
+			this.syncFiles = datapackage.syncFiles;
+			this.remoteSyncFiles = datapackage.remoteSyncFiles;
+			datapackage.checkData();
 			System.out.println("import data success");
 		} else {
 			//-----no data, then init new parameters-------
+			syncFiles = new Vector<String>();
+			remoteSyncFiles = new Vector<String>();
 			taskVector = new Vector<RunCommandThread>();
 		}
 		
@@ -342,10 +352,12 @@ public class BaiduYunAssistant
 		//-----------UIManage------------
 		try {
 			try {
+				
 				UIManager.setLookAndFeel(
 	//					com.sun.java.swing.plaf.nimbus
 	//					"com.sun.java.swing.plaf.nimbus.NumbusLookAndFeel");
 	//					UIManager.getSystemLookAndFeelClassName());
+//						"org.jb2011.lnf.windows2.Windows2LookAndFeel");
 						"com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
 	//					UIManager.getCrossPlatformLookAndFeelClassName());
 			} catch (ClassNotFoundException e1) {
@@ -489,6 +501,10 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
+		else if (e.getSource().equals(this.settingsItem))
+		{
+			new SettingsDialog(this, "Settings").setVisible(true);
+		}
 		else if (e.getSource().equals(this.aboutItem))
 		{
 			JOptionPane.showMessageDialog(this, 
@@ -544,8 +560,25 @@ public class BaiduYunAssistant
 		}
 		else if(e.getSource().equals(syncButton))
 		{
-			//----------compare files----------
-			System.out.println("Sync");
+			int size = syncFiles.size();
+			if (size>0 && remoteSyncFiles.size()==size) {
+				int i = 0;
+				for (i = 0; i < size; i++) {
+					this.addTask(new RunCommandThread(this,
+							"syncup "
+							+syncFiles.elementAt(i)
+							+" "
+							+remoteSyncFiles.elementAt(i),
+							true,
+							"syncup")
+					);
+//					new Thread(rct).start();
+				}
+			}
+			else {
+				JOptionPane.showMessageDialog(this,
+						"No directories to syncup\nyou can add syncfile in Options->settings");
+			}
 		}
 		else if (e.getSource().equals(searchButton))
 		{
@@ -564,6 +597,9 @@ public class BaiduYunAssistant
 			} catch (IOException e1) {
 				System.out.println("Clicked Home:error occured when list file");
 			}
+		}
+		else if (e.getSource().equals(settingsItem)) {
+			
 		}
 		
 	}
@@ -760,6 +796,9 @@ public class BaiduYunAssistant
 			datapackage.usedSpace = this.usedSpace;
 			datapackage.taskVector = this.taskVector;
 			datapackage.fileTree = this.fileTree;
+			datapackage.syncFiles = this.syncFiles;
+			datapackage.remoteSyncFiles = this.remoteSyncFiles;
+			datapackage.checkData();
 			//--------write datapackage--------
 			oos.writeObject(this.datapackage);
 			
@@ -803,16 +842,25 @@ public class BaiduYunAssistant
 	private void initMenuBar() {
 		//-----------Menu-------------
 		menuBar = new JMenuBar();
+		
+		optionMenu = new JMenu("Option");
+		settingsItem = new JMenuItem("Settings");
+		optionMenu.add(settingsItem);
+		menuBar.add(optionMenu);
+		settingsItem.addActionListener(this);
+
 		helpMenu = new JMenu("Help");
 		aboutItem = new JMenuItem("about");
-		cmdhelpItem = new JMenuItem("help", KeyEvent.VK_F1);
+		cmdhelpItem = new JMenuItem("help", KeyEvent.VK_H);
 		helpMenu.add(aboutItem);
 		helpMenu.add(cmdhelpItem);
 		menuBar.add(helpMenu);
-		this.setJMenuBar(menuBar);
 		aboutItem.addActionListener(this);
 		cmdhelpItem.addActionListener(this);
 //		helpDialog = new HelpDialog(this, "Command Help");
+		
+		this.setJMenuBar(menuBar);
+		
 	}
 	
 	private void initCommand() {
@@ -1058,7 +1106,7 @@ public class BaiduYunAssistant
 		rightMainLayout.setConstraints(taskLabel, gbc);
 		
 		taskTableModel = (DefaultTableModel)taskTable.getModel();
-		taskTableModel.addColumn("Index");
+		taskTableModel.addColumn("Hashcode");
 		taskTableModel.addColumn("Name");
 		taskTableModel.addColumn("startTime");
 
@@ -1094,13 +1142,31 @@ public class BaiduYunAssistant
 		spaceBar.setStringPainted(true);
 	}
 	/**
-	 * @param rct add and run RunCommandThread
-	 * @return
+	 * @param rct the task to be run
+	 * @return the index of task
 	 */
-	private boolean addTask(RunCommandThread rct) {
+	protected void addTask(RunCommandThread rct) {
+//		/**
+//		 * @param rct add and run RunCommandThread
+//		 * @return
+//		 */
+//		private boolean addTask(RunCommandThread rct) {
+//			return true;
+//		}
+//		this.taskTableModel.addRow(row);
 		this.taskVector.add(rct);
-		new Thread(rct).start();//start
-		return true;
+//		int i = taskTableModel.getRowCount();//taskVector.indexOf(rct);
+//		rct.setIndex(i);
+		String index = String.valueOf(rct.hashCode());
+//		String timeString = System;
+		java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		java.util.Date d=new java.util.Date();
+		String time = df.format(d);
+		String row[] = {index, rct.getTaskName(), time};
+		this.taskTableModel.addRow(row);
+//		System.out.println("Add task:"+row[0]+row[1]+row[2]);
+		new Thread(rct).start();
+//		return i;
 	}
 	/**
 	 * @param rct remove RunCommandThread from the taskVector,but will not kill it
@@ -1108,7 +1174,17 @@ public class BaiduYunAssistant
 	 */
 	protected boolean removeTask(RunCommandThread rct) {
 		this.taskVector.remove(rct);
-		return true;
+//		this.taskTableModel.removeRow(rct.getIndex());
+		int count = taskTableModel.getRowCount();
+		for (int i = 0; i < count; i++) {
+			if (Integer.valueOf((String)this.taskTableModel.getValueAt(i, 0)).equals(
+					Integer.valueOf(rct.hashCode())))
+			{
+				this.taskTableModel.removeRow(i);
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	protected int getTaskIndex(RunCommandThread rct) {
@@ -1172,7 +1248,7 @@ public class BaiduYunAssistant
 
 	@Override
 	public void focusLost(FocusEvent e) {
-		if (e.getSource().equals(cmdfField)) {
+		if (e.getSource().equals(cmdfField)&&cmdfField.getText().equals("")) {
 			cmdfField.setForeground(Color.gray);
 			cmdfField.setFont(new Font("serif",Font.BOLD, 12));
 			cmdfField.setText("input command here");

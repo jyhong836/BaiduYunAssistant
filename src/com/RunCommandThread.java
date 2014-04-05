@@ -19,12 +19,13 @@ public class RunCommandThread implements Runnable {
 	private String cmdList[] = null;
 	private boolean refresh = false;
 	private String taskName = null;
+	private int index = -1;
 //	private int ID = 0;
 	/**
 	 * @param owner
 	 *  offer the runCommand function
 	 */
-	public RunCommandThread(BaiduYunAssistant owner, String command) {
+	private RunCommandThread(BaiduYunAssistant owner, String command) {
 		this.owner = owner;
 		if (command!=null) {
 			this.cmdList = new String[1];
@@ -35,12 +36,12 @@ public class RunCommandThread implements Runnable {
 	 * @param owner 
 	 * @param command the command list
 	 */
-	public RunCommandThread(BaiduYunAssistant owner, String command[]) {
+	private RunCommandThread(BaiduYunAssistant owner, String command[]) {
 		this.owner = owner;
 		this.cmdList = command;
 	}
 	
-	public RunCommandThread(BaiduYunAssistant owner, String command, boolean refresh) {
+	private RunCommandThread(BaiduYunAssistant owner, String command, boolean refresh) {
 		this.refresh = refresh;
 		this.owner = owner;
 		if (command!=null) {
@@ -141,5 +142,17 @@ public class RunCommandThread implements Runnable {
 		//自行从TaskVector上删除
 		this.owner.removeTask(this);
 	}
+	/**
+	 * @return the index
+	 */
+//	public int getID() {
+//		return ID;
+//	}
+//	/**
+//	 * @param index the index to set
+//	 */
+//	public void setID(int id) {
+//		this.id = id;
+//	}
 
 }
