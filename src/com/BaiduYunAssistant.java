@@ -2,6 +2,7 @@ package com;
 
 //import javax.management.Query;
 //import javax.swing.DefaultListModel;
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -15,17 +16,24 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
+import java.awt.Image;
 import java.awt.MenuItem;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -46,18 +54,36 @@ import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
+
+
+
+
+
+
+
+
+
+
 //import java.util.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
 
+/**
+ * 
+ * @author jyhong
+ * TODO:刷新之后下载/更新云端文件目录到本地
+ * TODO：sync，先检查
+ * TODO:字体设置
+ * TODO:如果出故障了，应当有功能按键允许用户重新新建一个JFrame
+ * TODO:TaskQueue,每次创建RunCommandThread都在TaskQueue新建一个，TaskQueue最好是一个线程List
+ *
+ */
 public class BaiduYunAssistant extends JFrame 
 				implements ActionListener, 
 							KeyListener,
 							WindowListener,
 							Serializable, MouseListener {
-	/**
-	 * TODO:如果出故障了，应当有功能按键允许用户重新新建一个JFrame
-	 */
 	/**
 	 * @serial
 	 * serialVersionUID的作用是当修改了class的程序之后，把早期版本保存的同名类
@@ -128,9 +154,46 @@ public class BaiduYunAssistant extends JFrame
 	private ArrayBlockingQueue<String> cmdBuf;
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
+	private Vector<RunCommandThread> taskVector;
+	
+	Image splashImage;
+	private int splashWidth = 200;
+	private int splashHeight = 200;
+	private int framewidth = 800;
+	private int frameheight = 600;
 
 	public BaiduYunAssistant(BaiduYunAssistant bya) {
-		System.out.println(this.hashCode());
+		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+		
+		//----------splash----------
+		//TODO:--Window这个类满有意思的可以研究一下----
+		Window splashWindow = new Window(this);
+		//下面这样做，在后面将无法获得图片的尺寸，ImageIO才真正将图片载入
+//		splashImage = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");
+		try {
+			splashImage = ImageIO.read(new File("data/BaiduYunSplash.png"));
+			splashWidth = splashImage.getWidth(splashWindow);
+			splashHeight = splashImage.getHeight(splashWindow);
+			Canvas canvas = new Canvas(){
+				public void paint(Graphics g) {
+					g.drawImage(BaiduYunAssistant.this.splashImage, 0,0, this);
+					g.drawString("Copyright 2014 JunyuanHong", 40, 220);
+					g.drawString("LICENSE under GPLv3", 65, 238);
+				}
+			};
+			splashWindow.add(canvas);
+			splashWindow.setBounds((int)screenSize.getWidth()/2 - splashWidth/2,
+					(int)screenSize.getHeight()/2 - splashHeight/2,
+					splashWidth,
+					splashHeight);
+			splashWindow.setAlwaysOnTop(false);
+			splashWindow.setVisible(true);
+		} catch (IOException e1) {
+			System.out.println("cannot find splash png, ignore it.\n Or you may check for the data/BaiduYun.png");
+		}
+		
+//		System.out.println(this.hashCode());
+//		this.setFont(new Font(Font.MONOSPACED,Font.ITALIC,12));
 		if(bya!=null)
 		{
 			System.out.println("import data success");
@@ -140,9 +203,8 @@ public class BaiduYunAssistant extends JFrame
 			this.usedSpace = bya.usedSpace;
 		}
 		
-		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-		int framewidth = 600;
-		int frameheight = 400;
+		taskVector = new Vector<RunCommandThread>();
+		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
 				framewidth,
@@ -150,9 +212,12 @@ public class BaiduYunAssistant extends JFrame
 //		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 //        this.setFont(new Font("Serif", Font.BOLD, 20));
 		this.setTitle("Baidu Yun Assistant");
+		Image BaiduYunIcon = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");;
+		this.setIconImage(BaiduYunIcon);
 		
 		mainLayout = new GridBagLayout();
 		gbc = new GridBagConstraints();
+//		gbc.anchor = GridBagConstraints.SOUTH;// this not work
 		
 		//---------Menu----------
 		this.initMenuBar();
@@ -198,14 +263,48 @@ public class BaiduYunAssistant extends JFrame
 		
 		this.setLayout(mainLayout);
 //		this.setResizable(false);
+		splashWindow.setVisible(false);
 		this.setVisible(true);
 	}
 
 
 	public static void main(String[] args) {
+		/**
+		 * print the Installed Look and feels
+		 */
+//		for (UIManager.LookAndFeelInfo info:UIManager.getInstalledLookAndFeels()) {
+//			System.out.println(info);
+//		}
+		System.out.println(
+				UIManager.getCrossPlatformLookAndFeelClassName()+"\n"
+				+UIManager.getSystemLookAndFeelClassName());
+		try {
+			try {
+				UIManager.setLookAndFeel(
+	//					com.sun.java.swing.plaf.nimbus
+	//					"com.sun.java.swing.plaf.nimbus.NumbusLookAndFeel");
+	//					UIManager.getSystemLookAndFeelClassName());
+						"com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel");
+	//					UIManager.getCrossPlatformLookAndFeelClassName());
+			} catch (ClassNotFoundException e1) {
+				System.out.println("You have not install Nimbus Theme, use System Theme");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (InstantiationException e1) {
+				System.out.println("Error occur when import Numbus Theme, you may try to report it");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (IllegalAccessException e1) {
+				System.out.println("Error illegal access for Nimbus Theme");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (UnsupportedLookAndFeelException e1) {
+				System.out.println("Sorry, your System not support the Nimbus Theme");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			}
+		} catch(Exception e) {
+		}
+		
 		System.out.println("Thank you for using Baidu Yun Assistant");
 		System.out.println("Coyright 2014 Junyuan Hong ( GitHub: jyhong836 )");
-		System.out.println("Licensed under GPLv3");
+		System.out.println("LICENSE GPLv3");
 		System.out.println("NOTE: you need to add the bypy.py (https://github.com/houtianze/bypy) to /usr/bin/bypy first");
 		File byaFile = new File(BaiduYunAssistant.dataFolderString+"BYA.dat");
 		ObjectInputStream ois;
@@ -270,17 +369,18 @@ public class BaiduYunAssistant extends JFrame
 			fileDialog.setVisible(true);
 			if(fileDialog.getDirectory()!=null) {
 				String fileName = fileDialog.getDirectory();
-				if (fileDialog.getFile()!=null)
+				String remoteFileName = this.pwd;
+				if (fileDialog.getFile()!=null) {
 					fileName = fileName + fileDialog.getFile();
-//				System.out.println(fileName);
-				try {
-					System.out.println("upload "+fileName);
-					this.runCommand("upload "+fileName);
-					this.ListFile(null);
-				} catch (IOException e1) {
-					JOptionPane.showMessageDialog(this, "cannot upload");
-					e1.printStackTrace();
+					remoteFileName += "/"+fileDialog.getFile();
 				}
+				System.out.println("upload "+fileName+" "+this.pwd);
+//					this.runCommand("upload "+fileName+" "+this.pwd);
+				this.addTask(new RunCommandThread(this, 
+						"upload "+fileName+" "+remoteFileName,
+						true,
+						"upload "+fileName)
+				);
 			}
 		}
 		else if (e.getSource().equals(downloadButton))
@@ -343,18 +443,31 @@ public class BaiduYunAssistant extends JFrame
 		else if (e.getSource().equals(deleteButton))
 		{
 			int row = fileListTable.getSelectedRow();
+			int count = fileListTable.getSelectedRowCount();
+			int rows[] = null;
+			if (count>1) {
+				rows = fileListTable.getSelectedRows();
+			}
 			if (row==-1){
 				JOptionPane.showMessageDialog(this, 
 						"Please select a file");
 				return;
 			}
 			String fileName = (String)this.tableModel.getValueAt(row, 1);
+			
 			if (fileName.equals("..")||fileName==null) {
 				JOptionPane.showMessageDialog(this, 
 						"Please select a file");
 			}
+			
 			try {
 				this.runCommand("delete "+this.pwd+"/"+fileName);
+				if (count>1) {
+					for (int i=1;i<count;i++) {
+						fileName = (String)this.tableModel.getValueAt(rows[i], 1);
+						this.runCommand("delete "+this.pwd+"/"+fileName);
+					}
+				}
 				this.ListFile(null);
 			} catch (IOException e1) {
 				JOptionPane.showMessageDialog(this, 
@@ -369,7 +482,7 @@ public class BaiduYunAssistant extends JFrame
 		
 	}
 
-	private void ListFile(String arg[]) throws IOException {
+	protected void ListFile(String arg[]) throws IOException {
 		Process ps;
 		String inline;
 		boolean flag = false;
@@ -619,11 +732,12 @@ public class BaiduYunAssistant extends JFrame
 		this.add(cmdfField);
 		cmdfField.addActionListener(this);
 		gbc.gridwidth = 1;
+		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
 		mainLayout.setConstraints(cmdJLabel, gbc);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.gridheight = 1;
+		gbc.gridheight = 2;
 		gbc.gridwidth = 0;
 		mainLayout.setConstraints(cmdfField, gbc);
 	}
@@ -637,7 +751,7 @@ public class BaiduYunAssistant extends JFrame
 		this.add(cmdoutputLabel);
 		this.add(cmdoutputJScrollPane);
 		gbc.gridwidth = 1;
-//		gbc.gridheight = 1;
+		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
 		mainLayout.setConstraints(cmdoutputLabel, gbc);
@@ -676,7 +790,7 @@ public class BaiduYunAssistant extends JFrame
 		this.add(jlJScrollPane);
 		
 		gbc.gridwidth = 1;
-//		gbc.gridheight = 1;
+		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
 		mainLayout.setConstraints(jl_lb, gbc);
@@ -826,6 +940,27 @@ public class BaiduYunAssistant extends JFrame
 		spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
 				Math.floor(this.usedSpace/this.cloudSpace*1000)/10+"%");
 		spaceBar.setStringPainted(true);
+	}
+	/**
+	 * @param rct add and run RunCommandThread
+	 * @return
+	 */
+	private boolean addTask(RunCommandThread rct) {
+		this.taskVector.add(rct);
+		new Thread(rct).start();//start
+		return true;
+	}
+	/**
+	 * @param rct remove RunCommandThread from the taskVector,but will not kill it
+	 * @return
+	 */
+	protected boolean removeTask(RunCommandThread rct) {
+		this.taskVector.remove(rct);
+		return true;
+	}
+	
+	protected int getTaskIndex(RunCommandThread rct) {
+		return this.taskVector.indexOf(rct);
 	}
 
 
