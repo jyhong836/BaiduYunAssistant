@@ -1,7 +1,6 @@
 package com;
 
-//import javax.management.Query;
-//import javax.swing.DefaultListModel;
+
 import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JDialog;
@@ -16,12 +15,15 @@ import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
 import java.awt.Canvas;
+import java.awt.Color;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
@@ -47,6 +49,8 @@ import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -58,18 +62,8 @@ import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 
-
-
-
-
-
-
-
-
-
-
-//import java.util.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
+import javax.xml.ws.Action;
 
 /**
  * 
@@ -81,12 +75,14 @@ import javax.swing.JOptionPane;
  * TODO:TaskQueue,每次创建RunCommandThread都在TaskQueue新建一个，TaskQueue最好是一个线程List
  *
  */
-public class BaiduYunAssistant extends JFrame 
+public class BaiduYunAssistant 
+				extends JFrame 
 				implements ActionListener, 
 							KeyListener,
 							WindowListener, 
 							MouseListener,
-							Serializable {
+							Serializable, 
+							FocusListener {
 	/**
 	 * @serial
 	 * serialVersionUID的作用是当修改了class的程序之后，把早期版本保存的同名类
@@ -116,8 +112,14 @@ public class BaiduYunAssistant extends JFrame
 //	}
 	
 	private GridBagLayout mainLayout;
+	
+	private Container rightContainer;
+	private GridBagLayout rightMainLayout;
+	private Container leftContainer;
+	private GridBagLayout leftMainLayout;
 	private GridBagConstraints gbc;
 	
+	/*---------Left Grid Layout-----------*/
 	/* Menu */
 	private JMenuBar menuBar;
 	private JMenu helpMenu;
@@ -144,28 +146,39 @@ public class BaiduYunAssistant extends JFrame
 	
 	/* Control Buttons */
 	private JButton refreshButton;
+	private JButton homeButton;
 	private JButton uploadButton;
 	private JButton downloadButton;
 	private JButton newDirButton;
 	private JButton deleteButton;
 	private JButton syncButton;
 	private JButton searchButton;
+	/*---------END:Left Grid Layout-----------*/
+	
+	/*----------Right Grid Layout---------*/
+	private JLabel taskLabel;
+	private JTable taskTable;
+	private DefaultTableModel taskTableModel;
+	private JScrollPane taskScrollPane;
+	/*-------END:Right Grid Layout--------*/
 	
 	/* parameters */
 	public final static String dataFolderString = new String("data/");
 	private ArrayBlockingQueue<String> cmdBuf;
 	//--------TO be Moved--------
-	private String pwd; // currunt pwd
+	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
 	private Vector<RunCommandThread> taskVector;
 	//--------END:tO be Moved--------
+	private JTree fileTree;
+	private DataPackage datapackage;
 	
 //	private Image splashImage;
-	private int framewidth = 800;
+	private int framewidth = 900;
 	private int frameheight = 600;
 
-	public BaiduYunAssistant(BaiduYunAssistant bya) {
+	public BaiduYunAssistant(DataPackage datapackage) {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		
 		//----------splash----------
@@ -181,21 +194,29 @@ public class BaiduYunAssistant extends JFrame
 		//----------END:splash--------
 		
 		//--------check access token--------
+		splashWindow.setText("check for token access...");
 		this.checkTokenFile();
+		splashWindow.setText("check for token access...success");
+		
+		
 		
 		//---------init JFrame---------
 //		System.out.println(this.hashCode());
 //		this.setFont(new Font(Font.MONOSPACED,Font.ITALIC,12));
-		if(bya!=null)
+		//----import data---
+		if(datapackage!=null)
 		{
+			this.datapackage = datapackage;
+			this.pwd = datapackage.pwd;
+			this.cloudSpace = datapackage.cloudSpace;
+			this.usedSpace = datapackage.usedSpace;
+			this.taskVector = datapackage.taskVector;
+			this.fileTree = datapackage.fileTree;
 			System.out.println("import data success");
-			this.pwd = bya.pwd;
-			this.cmdBuf = bya.cmdBuf;
-			this.cloudSpace = bya.cloudSpace;
-			this.usedSpace = bya.usedSpace;
+		} else {
+			//-----no data, then init new parameters-------
+			taskVector = new Vector<RunCommandThread>();
 		}
-		
-		taskVector = new Vector<RunCommandThread>();
 		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
@@ -206,11 +227,39 @@ public class BaiduYunAssistant extends JFrame
 		this.setTitle("Baidu Yun Assistant");
 		Image BaiduYunIcon = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");;
 		this.setIconImage(BaiduYunIcon);
+		//--------------------------------
 		
+		//----------setLayout-------------
 		mainLayout = new GridBagLayout();
+		leftMainLayout = new GridBagLayout();
+		rightMainLayout = new GridBagLayout();
+		this.setLayout(mainLayout);
 		gbc = new GridBagConstraints();
-//		gbc.anchor = GridBagConstraints.SOUTH;// this not work
 		
+		gbc.anchor = GridBagConstraints.CENTER;// this not work
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 2;
+//		gbc.gridheight = 0;
+		gbc.weightx = 1;
+		gbc.weighty = 1;
+		leftContainer = new Container();
+		this.add(leftContainer);
+		leftContainer.setLayout(leftMainLayout);
+		mainLayout.setConstraints(leftContainer, gbc);
+		
+//		gbc.gridwidth = 0;
+////		gbc.gridheight = 0;
+		gbc.weightx = 5;
+//		gbc.weighty = 1;
+		rightContainer = new Container();
+		this.add(rightContainer);
+		rightContainer.setLayout(rightMainLayout);
+		mainLayout.setConstraints(rightContainer, gbc);
+		//------------------------------------
+		
+		
+		//---------init component-----------
+		splashWindow.setText("init component...");
 		//---------Menu----------
 		this.initMenuBar();
 
@@ -228,35 +277,37 @@ public class BaiduYunAssistant extends JFrame
 		
 		//---------------Space label---------------
 		this.initSpaceBar();
-		//-------------------------------
 		
 		
 		//-------------ADD Buttons------------
 		this.initButtons();
 		
+		//------------Task table--------------
+		this.initTaskTable();
+		
 		//-----------gap------
 		jp1 = new JPanel();
-		this.add(jp1);
+		leftContainer.add(jp1);
 		gbc.gridwidth = 0;
-		mainLayout.setConstraints(jp1, gbc);
+		leftMainLayout.setConstraints(jp1, gbc);
+
+		splashWindow.setText("start");
 		
 		//-------init parameters--------
 		this.initParameters();
 		
 		//----------Command init----------------
-		try {
-			this.runCommand("");
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			this.runCommand("");
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 		
 		//-----------Frame settings--------------
 		this.addWindowListener(this);
-		
-		this.setLayout(mainLayout);
 //		this.setResizable(false);
-//		if (splashWindow!=null)
-//			splashWindow.setVisible(false);
+		if (splashWindow!=null)
+			splashWindow.setVisible(false);
 		this.setVisible(true);
 	}
 
@@ -322,24 +373,26 @@ public class BaiduYunAssistant extends JFrame
 		System.out.println("NOTE: you need to add the bypy.py (https://github.com/houtianze/bypy) to /usr/bin/bypy first");
 		File byaFile = new File(BaiduYunAssistant.dataFolderString+"BYA.dat");
 		ObjectInputStream ois;
-		BaiduYunAssistant bya;
+		DataPackage data;
 		try {
 			ois = new ObjectInputStream(new FileInputStream(byaFile));
-			bya = (BaiduYunAssistant)ois.readObject();
-			bya.setVisible(true);
-//			bya = new BaiduYunAssistant(bya);
+			data = (DataPackage)ois.readObject();
+			new BaiduYunAssistant(data);
 			ois.close();
 		} catch (FileNotFoundException e) {
 			System.out.println("No saved data");
-			bya = new BaiduYunAssistant(null);
+			new BaiduYunAssistant(null);
 		} catch (IOException e) {
 			System.out.println("数据类型不兼容，可能使用了旧版本的数据，删除旧数据");
 			byaFile.delete();
 			System.out.print(e.toString());
-			bya = new BaiduYunAssistant(null);
+			new BaiduYunAssistant(null);
 //			e.printStackTrace();
 		} catch (ClassNotFoundException e) {
-			System.out.println("There is No BaiduYunAssistant Object Data in BYA.dat");
+			System.out.println("There is No BaiduYunAssistant DataPackage in BYA.dat");
+			byaFile.delete();
+			System.out.print(e.toString());
+			new BaiduYunAssistant(null);
 //			e.printStackTrace();
 		}
 	}
@@ -353,7 +406,8 @@ public class BaiduYunAssistant extends JFrame
 			try{
 				runCommand(cmd);
 			} catch (IOException e1) {
-				this.cmdoutputArea.setText("some error occurred in execute "+cmd);
+				this.cmdoutputArea.setText(cmd);
+				this.cmdoutputArea.append("\nERROR:"+e1);
 				e1.printStackTrace();
 			}
 		}
@@ -503,6 +557,14 @@ public class BaiduYunAssistant extends JFrame
 				e1.printStackTrace();
 			}
 		}
+		else if (e.getSource().equals(homeButton)) {
+			this.pwd = "/";
+			try {
+				this.ListFile(null);
+			} catch (IOException e1) {
+				System.out.println("Clicked Home:error occured when list file");
+			}
+		}
 		
 	}
 
@@ -623,7 +685,7 @@ public class BaiduYunAssistant extends JFrame
 				return;
 			}
 			else {
-				this.cmdoutputArea.append("[bypy]# "+cmd);
+				this.cmdoutputArea.append("\n[bypy]# "+cmd);
 				System.out.println("run:"+"bypy "+cmd);
 				ps = Runtime.getRuntime().exec("bypy "+cmd);
 			}
@@ -658,19 +720,16 @@ public class BaiduYunAssistant extends JFrame
 
 	@Override
 	public void keyReleased(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void keyTyped(KeyEvent e) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowActivated(WindowEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
@@ -692,7 +751,17 @@ public class BaiduYunAssistant extends JFrame
 			dataFile.delete();//如果遇到不兼容的存档，不执行删除会导致IOException
 			oos = new ObjectOutputStream(new FileOutputStream(
 					dataFile));
-			oos.writeObject(this);
+			//-------init datapackage---------
+			if (this.datapackage==null) {
+				this.datapackage = new DataPackage();
+			}
+			datapackage.pwd = this.pwd;
+			datapackage.cloudSpace = this.cloudSpace;
+			datapackage.usedSpace = this.usedSpace;
+			datapackage.taskVector = this.taskVector;
+			datapackage.fileTree = this.fileTree;
+			//--------write datapackage--------
+			oos.writeObject(this.datapackage);
 			
 			//TODO:DELETE THIS LINE BEFORE COMMIT
 //			dataFile.delete();
@@ -713,25 +782,21 @@ public class BaiduYunAssistant extends JFrame
 
 	@Override
 	public void windowDeactivated(WindowEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowDeiconified(WindowEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowIconified(WindowEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
 	public void windowOpened(WindowEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 	
@@ -753,19 +818,25 @@ public class BaiduYunAssistant extends JFrame
 	private void initCommand() {
 		cmdJLabel = new JLabel("command");
 		cmdfField = new JTextField();
-		this.cmdfField.addKeyListener(this);
-		this.add(cmdJLabel);
-		this.add(cmdfField);
+		
+		cmdfField.setForeground(Color.gray);
+		cmdfField.setFont(new Font("serif",Font.BOLD, 12));
+		cmdfField.setText("input command here");
+		
+		cmdfField.addKeyListener(this);
+		cmdfField.addFocusListener(this);
+		leftContainer.add(cmdJLabel);
+		leftContainer.add(cmdfField);
 		cmdfField.addActionListener(this);
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		mainLayout.setConstraints(cmdJLabel, gbc);
+		leftMainLayout.setConstraints(cmdJLabel, gbc);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.gridheight = 2;
 		gbc.gridwidth = 0;
-		mainLayout.setConstraints(cmdfField, gbc);
+		leftMainLayout.setConstraints(cmdfField, gbc);
 	}
 	
 	private void initShellCommandOutput() {
@@ -774,19 +845,19 @@ public class BaiduYunAssistant extends JFrame
 		cmdoutputArea.setFont(new Font("Monospaced", Font.BOLD, 12));
 		cmdoutputJScrollPane = new JScrollPane(cmdoutputArea);// set scroll
 		cmdoutputArea.setLineWrap(true);
-		this.add(cmdoutputLabel);
-		this.add(cmdoutputJScrollPane);
+		leftContainer.add(cmdoutputLabel);
+		leftContainer.add(cmdoutputJScrollPane);
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		mainLayout.setConstraints(cmdoutputLabel, gbc);
+		leftMainLayout.setConstraints(cmdoutputLabel, gbc);
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridwidth = 0;
 		gbc.gridheight = 5;
 		gbc.weightx = 1;
 		gbc.weighty = 0.3;
-		mainLayout.setConstraints(cmdoutputJScrollPane, gbc);
+		leftMainLayout.setConstraints(cmdoutputJScrollPane, gbc);
 	}
 	
 	private void initFileTable() {
@@ -812,20 +883,20 @@ public class BaiduYunAssistant extends JFrame
 		tableModel.addColumn("MD5");
 		
 		jlJScrollPane = new JScrollPane(fileListTable);
-		this.add(jl_lb);
-		this.add(jlJScrollPane);
+		leftContainer.add(jl_lb);
+		leftContainer.add(jlJScrollPane);
 		
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		mainLayout.setConstraints(jl_lb, gbc);
+		leftMainLayout.setConstraints(jl_lb, gbc);
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridwidth = 0;
 		gbc.gridheight = 5;
 		gbc.weightx = 1;
 		gbc.weighty = 0.8;
-		mainLayout.setConstraints(jlJScrollPane, gbc);
+		leftMainLayout.setConstraints(jlJScrollPane, gbc);
 		
 		fileListTable.addMouseListener(this);
 	}
@@ -835,11 +906,12 @@ public class BaiduYunAssistant extends JFrame
 		tokenTextField = new JTextField();
 		String tokenString =  this.checkTokenFile();
 		if (tokenString!=null) {
-			tokenTextField.setText(tokenString);
+//			tokenTextField.setText(tokenString);
+			tokenTextField.setText("checked");
 			tokenTextField.setEnabled(false);
 		}
 		// 布局设置
-		this.add(tokenTextField_lb);
+		leftContainer.add(tokenTextField_lb);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
         //该方法是为了设置如果组件所在的区域比组件本身要大时的显示情况
         //NONE：不调整组件大小。
@@ -850,19 +922,20 @@ public class BaiduYunAssistant extends JFrame
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		mainLayout.setConstraints(tokenTextField_lb, gbc);
-		this.add(tokenTextField);
+		leftMainLayout.setConstraints(tokenTextField_lb, gbc);
+		leftContainer.add(tokenTextField);
 //		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.gridwidth = 2;
-		gbc.gridheight = 1;
+		gbc.gridwidth = 6;
+//		gbc.gridheight = 1;
 		gbc.weightx = 1;
-		mainLayout.setConstraints(tokenTextField, gbc);
+		leftMainLayout.setConstraints(tokenTextField, gbc);
 		tokenRefreshButton = new JButton("Refresh Token");
 		tokenRefreshButton.addActionListener(this);
-		this.add(tokenRefreshButton);
+		//------refresh token button--------
+		leftContainer.add(tokenRefreshButton);
 		gbc.gridwidth = 0;
 		gbc.weightx = 0;
-		mainLayout.setConstraints(tokenRefreshButton, gbc);
+		leftMainLayout.setConstraints(tokenRefreshButton, gbc);
 		
 	}
 
@@ -901,76 +974,120 @@ public class BaiduYunAssistant extends JFrame
 
 
 	private void initButtons() {
+		gbc.fill = GridBagConstraints.HORIZONTAL;
 		//--------refresh--------
 		refreshButton = new JButton("Refresh");
 		refreshButton.addActionListener(this);
-		this.add(refreshButton);
-		gbc.fill = GridBagConstraints.NONE;
+		leftContainer.add(refreshButton);
 		gbc.gridwidth = 1;
-		gbc.weightx = 0;
-		mainLayout.setConstraints(refreshButton, gbc);
+		gbc.weightx = 1;
+		gbc.ipadx = 0; // 这一行最右侧的空间
+		leftMainLayout.setConstraints(refreshButton, gbc);
+		//---------home---------
+		homeButton = new JButton("Home");
+		homeButton.addActionListener(this);
+		leftContainer.add(homeButton);
+		leftMainLayout.setConstraints(homeButton, gbc);
 		//---------upload-------
 		uploadButton = new JButton("Upload");
 		uploadButton.addActionListener(this);
-		this.add(uploadButton);
-		mainLayout.setConstraints(uploadButton, gbc);
+		leftContainer.add(uploadButton);
+		leftMainLayout.setConstraints(uploadButton, gbc);
 		//---------download-----
 		downloadButton = new JButton("Download");
 		downloadButton.addActionListener(this);
-		this.add(downloadButton);
-		mainLayout.setConstraints(uploadButton, gbc);
+		leftContainer.add(downloadButton);
+		leftMainLayout.setConstraints(uploadButton, gbc);
 		//----------newDir--------
 		newDirButton = new JButton("New Dir");
 		newDirButton.addActionListener(this);
-		this.add(newDirButton);
-		mainLayout.setConstraints(newDirButton, gbc);
+		leftContainer.add(newDirButton);
+		leftMainLayout.setConstraints(newDirButton, gbc);
 		//----------delete-----
 		deleteButton = new JButton("Delete");
 		deleteButton.addActionListener(this);
-		this.add(deleteButton);
-		mainLayout.setConstraints(deleteButton, gbc);
+		leftContainer.add(deleteButton);
+		leftMainLayout.setConstraints(deleteButton, gbc);
 		//----------sync-------
 		syncButton = new JButton("Sync");
 		syncButton.addActionListener(this);
-		this.add(syncButton);
-		mainLayout.setConstraints(syncButton, gbc);
+		leftContainer.add(syncButton);
+		leftMainLayout.setConstraints(syncButton, gbc);
 		//--------search---------
 		searchButton = new JButton("Search");
 		searchButton.addActionListener(this);
-		this.add(searchButton);
-		mainLayout.setConstraints(searchButton, gbc);
+		leftContainer.add(searchButton);
+		leftMainLayout.setConstraints(searchButton, gbc);
 		
 	}
 	
 
-
 	private void initSpaceBar() {
 		spaceJLabel = new JLabel("space:");
-		this.add(spaceJLabel);
+		leftContainer.add(spaceJLabel);
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		mainLayout.setConstraints(spaceJLabel, gbc);
-		spaceBar = new JProgressBar(0, 1000);
+		leftMainLayout.setConstraints(spaceJLabel, gbc);
 		
-		this.add(spaceBar);
+		spaceBar = new JProgressBar(0, 1000);
+		leftContainer.add(spaceBar);
 		gbc.gridwidth = 0;
-		mainLayout.setConstraints(spaceBar, gbc);
+		leftMainLayout.setConstraints(spaceBar, gbc);
+	}
+	
+	private void initTaskTable() {
+		this.taskLabel = new JLabel("Task List");
+		this.taskTable = new JTable(){
+			/*
+			 * 重载isCellEditable方法使得表格元素无法编辑
+			 **/
+			@Override
+			public boolean isCellEditable(int row, int column) {
+				return false;
+			}
+		};
+
+		gbc.fill = GridBagConstraints.BOTH;
+		rightContainer.add(taskLabel);
+		gbc.gridwidth = 0;
+		gbc.gridheight = 1;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		rightMainLayout.setConstraints(taskLabel, gbc);
+		
+		taskTableModel = (DefaultTableModel)taskTable.getModel();
+		taskTableModel.addColumn("Index");
+		taskTableModel.addColumn("Name");
+		taskTableModel.addColumn("startTime");
+
+		taskScrollPane = new JScrollPane(taskTable);
+		rightContainer.add(taskScrollPane);
+//		gbc.gridwidth = 4;
+//		gbc.gridheight = 5;
+//		gbc.weightx = 1;
+
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 0;
+		gbc.gridheight = 2;
+		gbc.weightx = 1;
+		gbc.weighty = 0.01;
+		rightMainLayout.setConstraints(taskScrollPane, gbc);
+		
+		taskTable.addMouseListener(this);
 	}
 	
 
 	private void initParameters() {
 		cmdBuf = new ArrayBlockingQueue<String>(32, true);
-		pwd = new String("/");
 //		try {
 //			this.runCommand("quota");
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
 		//------spaceBar-----------
-//		spaceBar.setValue(0);
-//		spaceBar.setString("-/- 0.0%");
+		// this request to runCommand("quto") firstly
 		spaceBar.setValue((int)(this.usedSpace/this.cloudSpace*1000));
 		spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
 				Math.floor(this.usedSpace/this.cloudSpace*1000)/10+"%");
@@ -1020,29 +1137,46 @@ public class BaiduYunAssistant extends JFrame
 
 	@Override
 	public void mouseEntered(MouseEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 
 	@Override
 	public void mouseExited(MouseEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 
 	@Override
 	public void mousePressed(MouseEvent arg0) {
-		// TODO Auto-generated method stub
 		
 	}
 
 
 	@Override
 	public void mouseReleased(MouseEvent arg0) {
-		// TODO Auto-generated method stub
 		
+	}
+
+
+	@Override
+	public void focusGained(FocusEvent e) {
+		if (e.getSource().equals(cmdfField)) {
+			this.cmdfField.setForeground(Color.black);
+			cmdfField.setFont(new Font("serif",Font.PLAIN, 12));
+			this.cmdfField.setText("");
+		}
+		
+	}
+
+
+	@Override
+	public void focusLost(FocusEvent e) {
+		if (e.getSource().equals(cmdfField)) {
+			cmdfField.setForeground(Color.gray);
+			cmdfField.setFont(new Font("serif",Font.BOLD, 12));
+			cmdfField.setText("input command here");
+		}
 	}
 }
 
