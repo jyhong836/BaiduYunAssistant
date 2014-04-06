@@ -123,17 +123,17 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		if (source.equals(addButton)) {			
 			JFileChooser fileChooser = new JFileChooser();
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+			fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
 			fileChooser.setDialogTitle("choose sync dir or file");
 			int stat = fileChooser.showOpenDialog(this);
 			
 			if (stat==JFileChooser.APPROVE_OPTION) {
 				File selectFile = fileChooser.getSelectedFile();
 				owner.syncFiles.add(selectFile.getAbsolutePath());
-				owner.remoteSyncFiles.add(selectFile.getName());
+				owner.remoteSyncFiles.add("/sync/"+selectFile.getName());
 				this.refreshSyncFileTable();
 			}
 		} else if (source.equals(deleteButton)) {
-//			int row = fileListTable.getSelectedRow();
 			int count = fileListTable.getSelectedRowCount();
 			int rows[] = null;
 			if (count>=1) {
@@ -144,14 +144,6 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 						"Please select a directory");
 				return;
 			}
-//			String fileName = (String)this.tableModel.getValueAt(row, 1);
-//			
-//			if (fileName.equals("..")||fileName==null) {
-//				JOptionPane.showMessageDialog(this, 
-//						"Please select a file");
-//			}
-			
-			//				this.runCommand("delete "+this.pwd+"/"+fileName);
 			if (count>=1) {
 				for (int i=0;i<count;i++) {
 					String localFile = (String)this.tableModel.getValueAt(rows[i], 0);
