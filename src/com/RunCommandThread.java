@@ -3,7 +3,6 @@
  */
 package com;
 
-import java.awt.color.CMMException;
 import java.io.IOException;
 
 import javax.swing.JOptionPane;
@@ -25,30 +24,30 @@ public class RunCommandThread implements Runnable {
 	 * @param owner
 	 *  offer the runCommand function
 	 */
-	private RunCommandThread(BaiduYunAssistant owner, String command) {
-		this.owner = owner;
-		if (command!=null) {
-			this.cmdList = new String[1];
-			this.cmdList[0] = command;
-		}
-	}
+//	private RunCommandThread(BaiduYunAssistant owner, String command) {
+//		this.owner = owner;
+//		if (command!=null) {
+//			this.cmdList = new String[1];
+//			this.cmdList[0] = command;
+//		}
+//	}
 	/**
 	 * @param owner 
 	 * @param command the command list
 	 */
-	private RunCommandThread(BaiduYunAssistant owner, String command[]) {
-		this.owner = owner;
-		this.cmdList = command;
-	}
+//	private RunCommandThread(BaiduYunAssistant owner, String command[]) {
+//		this.owner = owner;
+//		this.cmdList = command;
+//	}
 	
-	private RunCommandThread(BaiduYunAssistant owner, String command, boolean refresh) {
-		this.refresh = refresh;
-		this.owner = owner;
-		if (command!=null) {
-			this.cmdList = new String[1];
-			this.cmdList[0] = command;
-		}
-	}
+//	private RunCommandThread(BaiduYunAssistant owner, String command, boolean refresh) {
+//		this.refresh = refresh;
+//		this.owner = owner;
+//		if (command!=null) {
+//			this.cmdList = new String[1];
+//			this.cmdList[0] = command;
+//		}
+//	}
 	public RunCommandThread(BaiduYunAssistant owner,
 			String command,
 			boolean refresh,

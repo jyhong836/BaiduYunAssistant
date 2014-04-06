@@ -2,7 +2,6 @@ package com;
 
 
 import javax.imageio.ImageIO;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLayer;
@@ -14,41 +13,26 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableModel;
-import javax.swing.Timer;
 
-import java.awt.AlphaComposite;
 import java.awt.BorderLayout;
-import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.FileDialog;
 import java.awt.Font;
-//import java.awt.Frame;
-//import java.awt.Graphics;
-//import java.awt.Graphics2D;
-import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
 import java.awt.Image;
-import java.awt.MenuItem;
-import java.awt.RenderingHints;
 import java.awt.Toolkit;
-import java.awt.Window;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.net.URISyntaxException;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 import java.awt.event.FocusEvent;
@@ -59,13 +43,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.Iterator;
+import java.util.Enumeration;
 import java.util.Properties;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JOptionPane;
-import javax.xml.ws.Action;
 
 import com.Antilias.*;
 
@@ -195,6 +178,8 @@ public class BaiduYunAssistant
 	protected Vector<String> remoteSyncFiles;
 	private JTree fileTree;
 	private DataPackage datapackage;
+	//TODO:让mainThread可以被强制终止，如刷新被强制终止
+	private Thread mainThread;//在mainThread运行前会执行this.setEnable(false)
 	
 //	private Image splashImage;
 	private int framewidth = 900;
@@ -333,6 +318,7 @@ public class BaiduYunAssistant
 		
 		//-------init parameters--------
 		this.initParameters();
+		mainThread = null;
 		
 		//----------Command init----------------
 //		try {
@@ -355,7 +341,7 @@ public class BaiduYunAssistant
 		 // ex.
 		 // setUIFont (new javax.swing.plaf.FontUIResource("Serif",Font.ITALIC,12));
 		 //
-		 java.util.Enumeration keys = UIManager.getDefaults().keys();
+		 Enumeration<Object> keys = UIManager.getDefaults().keys();
 		 while (keys.hasMoreElements()) {
 		 Object key = keys.nextElement();
 		 Object value = UIManager.get(key);
@@ -418,20 +404,16 @@ public class BaiduYunAssistant
 			} 
 //			setUIFont(new FontUIResource(Font.SANS_SERIF, Font.PLAIN, 14));
 			
+			/* 打印系统字体 */
+			/*
 			GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			// GraphicsEnvironment是一个抽象类，不能实例化，只能用其中的静态方法获取一个实例
 			String fontNames[];
 			fontNames = environment.getAvailableFontFamilyNames();// 获取系统字体
-//			for (String tmp:fontNames) {
-//				System.out.println("System:"+tmp);
-//			}
-			
-			
-//			Font font = new Font(Font.SERIF,Font.PLAIN,15);
-//	        UIManager.put("Button.font", font); 
-//	        UIManager.put("Menu.font", font);
-//	        UIManager.put("MenuItem.font", font);
-//		    UIManager.put("Button.font", new Font("宋体", Font.BOLD , 32) ); 
+			for (String tmp:fontNames) {
+				System.out.println("System:"+tmp);
+			}
+			 */
 		} catch(Exception e) {
 			System.out.println("some unknown error occurred, you may report it");
 		}
@@ -442,6 +424,8 @@ public class BaiduYunAssistant
 		System.out.println("Coyright 2014 Junyuan Hong ( GitHub: jyhong836 )");
 		System.out.println("LICENSE GPLv3");
 		System.out.println("NOTE: you need to add the bypy.py (https://github.com/houtianze/bypy) to /usr/bin/bypy first");
+		
+		/* Read saved data */
 		File byaFile = new File(BaiduYunAssistant.dataFolderString+"BYA.dat");
 		ObjectInputStream ois;
 		DataPackage data;
@@ -487,14 +471,15 @@ public class BaiduYunAssistant
 		{
         	loadingLayerUI.start(); 
         	this.setEnabled(false);
-        	new Thread(new RunCommandThread(this, "quota", true, null){
+        	mainThread = new Thread(new RunCommandThread(this, "quota", true, null){
         		@Override
         		public void extTask() {
         			BaiduYunAssistant.this.spaceBar.setValue((int)(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000));
         			BaiduYunAssistant.this.spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
     						Math.floor(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000)/10+"%");
         		}
-        	}).start();
+        	});
+        	mainThread.start();
 		}
 		else if (source.equals(uploadButton))
 		{
@@ -544,16 +529,6 @@ public class BaiduYunAssistant
 		{
 			this.actionSnycButton();
 		}
-//		else if (source.equals(searchButton))
-//		{
-//			//--------search----------
-//			String filter = JOptionPane.showInputDialog("Filter:");
-//			try {
-//				this.runCommand("search "+filter);
-//			} catch (IOException e1) {
-//				e1.printStackTrace();
-//			}
-//		}
 		else if (source.equals(homeButton)) {
 			this.pwd = "/";
 			try {
@@ -737,6 +712,7 @@ public class BaiduYunAssistant
 	protected void ListFile(String arg[]) throws IOException {
 		Process ps;
 		String inline;
+		String errorLine = null;
 		boolean flag = false;
 		if (arg==null||(arg.length<=1&&arg.length>0)){
 			arg = new String[2];
@@ -778,7 +754,13 @@ public class BaiduYunAssistant
 					tableModel.addRow(firstline);
 				}
 				flag = true;
+			} else if (inline.startsWith("<E>")) {
+				errorLine = inline;
 			}
+		}
+		if (!flag && errorLine!=null) {
+			JOptionPane.showMessageDialog(this, 
+					"刷新失败，请检查你的网络\n"+errorLine);
 		}
 		return;
 	}
@@ -1088,6 +1070,11 @@ public class BaiduYunAssistant
 	private void initFileTable() {
 		jl_lb = new ALabel("文件");
 		fileListTable = new ATable(){
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -3744727136864212136L;
+
 			/*
 			 * 重载isCellEditable方法使得表格元素无法编辑
 			 **/
@@ -1266,6 +1253,11 @@ public class BaiduYunAssistant
 	private void initTaskTable() {
 		this.taskLabel = new ALabel("Task List");
 		this.taskTable = new ATable(){
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = -6905498873157009980L;
+
 			/*
 			 * 重载isCellEditable方法使得表格元素无法编辑
 			 **/
@@ -1373,8 +1365,9 @@ public class BaiduYunAssistant
 		if (taskVector.indexOf(rct)!=-1) {
 			this.removeTask(rct);
 			return;
-		} else {
+		} else { // mainThread is to be completed
 			this.loadingLayerUI.stop();
+			mainThread = null;
 			this.setEnabled(true);
 		}
 	}

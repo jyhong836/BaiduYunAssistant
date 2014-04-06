@@ -6,25 +6,15 @@ package com;
 import com.Antilias.*;
 
 import java.awt.Container;
-import java.awt.Dialog;
-import java.awt.FileDialog;
-import java.awt.Frame;
-import java.awt.GraphicsConfiguration;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.GridLayout;
-import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.io.IOException;
-import java.util.Iterator;
 import java.util.Vector;
 
-import javax.naming.directory.DirContext;
-import javax.naming.spi.DirectoryManager;
 //import javax.swing.AButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -40,6 +30,11 @@ import javax.swing.table.DefaultTableModel;
  *
  */
 public class SettingsDialog extends JDialog implements ActionListener, MouseListener {
+
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -1099645657741043141L;
 
 	private BaiduYunAssistant owner;
 	
@@ -211,7 +206,7 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 			owner.remoteSyncFiles.removeAllElements();
 			this.refreshSyncFileTable();
 		} else if(source.equals(applyButton)) {
-			owner.bypyArgument = this.argumentField.getText();
+			owner.bypyArgument = this.argumentField.getText()+" ";//防止最好少一个空格
 		}
 		
 	}
@@ -219,6 +214,11 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	private void initSyncFileTable() {
 		syncFileLabel = new ALabel("同步列表");
 		fileListTable = new ATable(){
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 2909792252029540106L;
+
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false;
