@@ -11,7 +11,7 @@ import javax.swing.JFrame;
 //import javax.swing.AMenuBar;
 //import javax.swing.AMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JProgressBar;
+//import javax.swing.AProgressBar;
 import javax.swing.JScrollPane;
 //import javax.swing.ATable;
 import javax.swing.JTextArea;
@@ -155,7 +155,7 @@ public class BaiduYunAssistant
 	private ATextField tokenTextField;
 	private AButton tokenRefreshButton;
 	private ALabel spaceJLabel;
-	private JProgressBar spaceBar;
+	private AProgressBar spaceBar;
 	
 	/* Control Buttons */
 	private AButton refreshButton;
@@ -1229,7 +1229,7 @@ public class BaiduYunAssistant
 		gbc.weighty = 0;
 		leftMainLayout.setConstraints(spaceJLabel, gbc);
 		
-		spaceBar = new JProgressBar(0, 1000);
+		spaceBar = new AProgressBar(0, 1000);
 		leftContainer.add(spaceBar);
 		gbc.gridwidth = 0;
 		leftMainLayout.setConstraints(spaceBar, gbc);
