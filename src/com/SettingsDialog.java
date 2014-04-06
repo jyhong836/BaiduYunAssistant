@@ -163,7 +163,9 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 			}
 			this.refreshSyncFileTable();
 		} else if(source.equals(deleteAllButton)) {
-			
+			owner.syncFiles.removeAllElements();
+			owner.remoteSyncFiles.removeAllElements();
+			this.refreshSyncFileTable();
 		}
 		
 	}
