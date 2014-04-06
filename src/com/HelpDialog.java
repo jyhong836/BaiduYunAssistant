@@ -18,7 +18,8 @@ import java.io.InputStreamReader;
 
 import javax.swing.JDialog;
 import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
+//import javax.swing.ATextArea;
+import com.Antilias.*;
 
 /**
  * @author jyhong
@@ -77,7 +78,7 @@ public class HelpDialog extends JDialog {
 	 */
 	public HelpDialog(Frame owner, String title) {
 		super(owner, title);
-		JTextArea helpTextArea = new JTextArea();
+		ATextArea helpTextArea = new ATextArea();
 		JScrollPane scrollPane = new JScrollPane(helpTextArea);
 		helpTextArea.setLineWrap(true);
 		File helpFile = new File(BaiduYunAssistant.dataFolderString+"help");

@@ -2,38 +2,44 @@ package com;
 
 
 import javax.imageio.ImageIO;
-import javax.swing.JButton;
+//import javax.swing.AButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JLabel;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
+//import javax.swing.ALabel;
+//import javax.swing.AMenu;
+//import javax.swing.AMenuBar;
+//import javax.swing.AMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
+//import javax.swing.ATable;
 import javax.swing.JTextArea;
-import javax.swing.JTextField;
+//import javax.swing.ATextField;
 import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 
+import java.awt.AlphaComposite;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.FileDialog;
 import java.awt.Font;
-import java.awt.Frame;
-import java.awt.Graphics;
+//import java.awt.Frame;
+//import java.awt.Graphics;
+//import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Image;
 import java.awt.MenuItem;
+import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.BufferedReader;
@@ -64,6 +70,8 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JOptionPane;
 import javax.xml.ws.Action;
+
+import com.Antilias.*;
 
 /**
  * 
@@ -121,46 +129,48 @@ public class BaiduYunAssistant
 	
 	/*---------Left Grid Layout-----------*/
 	/* Menu */
-	private JMenuBar menuBar;
+	private AMenuBar menuBar;
 	//--help--
-	private JMenu helpMenu;
-	private JMenuItem aboutItem;
-	private JMenuItem cmdhelpItem;
+	private AMenu helpMenu;
+	private AMenuItem aboutItem;
+	private AMenuItem cmdhelpItem;
 	private final HelpDialog helpDialog = new HelpDialog(this, "Command Help");
-	private JMenu optionMenu;
-	private JMenuItem settingsItem;
+	private AMenu optionMenu;
+	private AMenuItem settingsItem;
 	
 	/* component */
 	private JPanel jp1;
-	private JLabel cmdJLabel;
-	private JTextField cmdfField;
-	private JLabel cmdoutputLabel;
+	private ALabel cmdJLabel;
+	private ATextField cmdfField;
+	private ALabel cmdoutputLabel;
 	private JTextArea cmdoutputArea;
 	private JScrollPane cmdoutputJScrollPane;
+	private ALabel searchLabel;
+	private ATextField searchField;
 	private DefaultTableModel tableModel;
-	private JLabel jl_lb;
-	private JTable fileListTable;
+	private ALabel jl_lb;
+	private ATable fileListTable;
 	private JScrollPane jlJScrollPane;
-	private JLabel tokenTextField_lb;
-	private JTextField tokenTextField;
-	private JButton tokenRefreshButton;
-	private JLabel spaceJLabel;
+	private ALabel tokenTextField_lb;
+	private ATextField tokenTextField;
+	private AButton tokenRefreshButton;
+	private ALabel spaceJLabel;
 	private JProgressBar spaceBar;
 	
 	/* Control Buttons */
-	private JButton refreshButton;
-	private JButton homeButton;
-	private JButton uploadButton;
-	private JButton downloadButton;
-	private JButton newDirButton;
-	private JButton deleteButton;
-	private JButton syncButton;
-	private JButton searchButton;
+	private AButton refreshButton;
+	private AButton homeButton;
+	private AButton uploadButton;
+	private AButton downloadButton;
+	private AButton newDirButton;
+	private AButton deleteButton;
+	private AButton syncButton;
+	private AButton searchButton;
 	/*---------END:Left Grid Layout-----------*/
 	
 	/*----------Right Grid Layout---------*/
-	private JLabel taskLabel;
-	private JTable taskTable;
+	private ALabel taskLabel;
+	private ATable taskTable;
 	private DefaultTableModel taskTableModel;
 	private JScrollPane taskScrollPane;
 	/*-------END:Right Grid Layout--------*/
@@ -228,6 +238,10 @@ public class BaiduYunAssistant
 			taskVector = new Vector<RunCommandThread>();
 		}
 		
+//		Graphics2D graphics2d =(Graphics2D)(this.getGraphics());
+//		graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+//				RenderingHints.VALUE_ANTIALIAS_ON);
+		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
 				framewidth,
@@ -279,6 +293,9 @@ public class BaiduYunAssistant
 		//------------Shell Command Output------------
 		this.initShellCommandOutput();
 		
+		//--------------init search bottons---------
+		this.initSearchField();
+		
 		//---------------Table---------------
 		this.initFileTable();
 		
@@ -289,8 +306,8 @@ public class BaiduYunAssistant
 		this.initSpaceBar();
 		
 		
-		//-------------ADD Buttons------------
-		this.initButtons();
+		//-------------ADD Bottom Buttons------------
+		this.initBottomButtons();
 		
 		//------------Task table--------------
 		this.initTaskTable();
@@ -321,6 +338,21 @@ public class BaiduYunAssistant
 		this.setVisible(true);
 	}
 
+	 public static void setUIFont(FontUIResource f) {
+		 //
+		 // sets the default font for all Swing components.
+		 // ex.
+		 // setUIFont (new javax.swing.plaf.FontUIResource("Serif",Font.ITALIC,12));
+		 //
+		 java.util.Enumeration keys = UIManager.getDefaults().keys();
+		 while (keys.hasMoreElements()) {
+		 Object key = keys.nextElement();
+		 Object value = UIManager.get(key);
+		 if (value instanceof javax.swing.plaf.FontUIResource)
+		 UIManager.put(key, f);
+		 }
+		 }
+		 
 
 	public static void main(String[] args) {
 		/**
@@ -372,7 +404,23 @@ public class BaiduYunAssistant
 			} catch (UnsupportedLookAndFeelException e1) {
 				System.out.println("Sorry, your System not support the Nimbus Theme");
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			}
+			} 
+			setUIFont(new FontUIResource(Font.SANS_SERIF, Font.PLAIN, 12));
+			
+			GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+			// GraphicsEnvironment是一个抽象类，不能实例化，只能用其中的静态方法获取一个实例
+			String fontNames[];
+			fontNames = environment.getAvailableFontFamilyNames();// 获取系统字体
+//			for (String tmp:fontNames) {
+//				System.out.println("System:"+tmp);
+//			}
+			
+			
+//			Font font = new Font(Font.SERIF,Font.PLAIN,15);
+//	        UIManager.put("Button.font", font); 
+//	        UIManager.put("Menu.font", font);
+//	        UIManager.put("MenuItem.font", font);
+//		    UIManager.put("Button.font", new Font("宋体", Font.BOLD , 32) ); 
 		} catch(Exception e) {
 			System.out.println("some unknown error occurred, you may report it");
 		}
@@ -411,7 +459,8 @@ public class BaiduYunAssistant
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource().equals(cmdfField)) {
+		Object source = e.getSource();
+		if (source.equals(cmdfField)) {
 			/* run commands */
 			String cmd = cmdfField.getText();
 			cmdfField.setText(null);
@@ -423,7 +472,7 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
-		else if(e.getSource().equals(refreshButton))
+		else if(source.equals(refreshButton))
 		{
 			try {
 //				this.runCommand("list /");
@@ -443,56 +492,15 @@ public class BaiduYunAssistant
 //				e1.printStackTrace();
 //			}
 		}
-		else if (e.getSource().equals(uploadButton))
+		else if (source.equals(uploadButton))
 		{
-			FileDialog fileDialog = new FileDialog(this, "upload", FileDialog.LOAD);
-			fileDialog.setVisible(true);
-			if(fileDialog.getDirectory()!=null) {
-				String fileName = fileDialog.getDirectory();
-				String remoteFileName = this.pwd;
-				if (fileDialog.getFile()!=null) {
-					fileName = fileName + fileDialog.getFile();
-					remoteFileName += "/"+fileDialog.getFile();
-				}
-				System.out.println("upload "+fileName+" "+this.pwd);
-//					this.runCommand("upload "+fileName+" "+this.pwd);
-				this.addTask(new RunCommandThread(this, 
-						"upload "+fileName+" "+remoteFileName,
-						true,
-						"upload "+fileName)
-				);
-			}
+			this.actionUploadButton();
 		}
-		else if (e.getSource().equals(downloadButton))
+		else if (source.equals(downloadButton))
 		{
-			try {
-				int row = fileListTable.getSelectedRow();
-				if (row==-1)
-					return;
-				String type = (String)this.tableModel.getValueAt(row, 0);
-				String fileName = (String)this.tableModel.getValueAt(row, 1);
-				FileDialog fileDialog = new FileDialog(this, "upload",
-						FileDialog.SAVE);
-				fileDialog.setVisible(true);
-				if(fileDialog.getDirectory()!=null) {
-					String getf = fileDialog.getFile();
-					if (getf==null)
-						getf = fileName;
-					if (type.equals("D")) {
-						this.runCommand("downdir "+this.pwd+"/"+fileName+" "
-								+fileDialog.getDirectory()
-								+"/"+getf);
-					}else if(type.equals("F")) {
-						this.runCommand("downfile "+this.pwd+"/"+fileName+" "
-								+fileDialog.getDirectory()
-								+"/"+getf);
-					}
-				}
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
+			this.actionDownloadButton();
 		}
-		else if (e.getSource().equals(tokenRefreshButton))
+		else if (source.equals(tokenRefreshButton))
 		{
 			try {
 				this.runCommand("refreshtoken");
@@ -501,20 +509,20 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
-		else if (e.getSource().equals(this.settingsItem))
+		else if (source.equals(this.settingsItem))
 		{
-			new SettingsDialog(this, "Settings").setVisible(true);
+			new SettingsDialog(this, "设置").setVisible(true);
 		}
-		else if (e.getSource().equals(this.aboutItem))
+		else if (source.equals(this.aboutItem))
 		{
 			JOptionPane.showMessageDialog(this, 
 					"Copyright 2014 Junyuan Hong\n  LICENSE under GPL v3");
 		}
-		else if (e.getSource().equals(this.cmdhelpItem))
+		else if (source.equals(this.cmdhelpItem))
 		{
 			helpDialog.setVisible(true);
 		}
-		else if (e.getSource().equals(newDirButton))
+		else if (source.equals(newDirButton))
 		{
 			String dirName = JOptionPane.showInputDialog("Input directory name:");
 			try {
@@ -524,63 +532,15 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
-		else if (e.getSource().equals(deleteButton))
+		else if (source.equals(deleteButton))
 		{
-			int row = fileListTable.getSelectedRow();
-			int count = fileListTable.getSelectedRowCount();
-			int rows[] = null;
-			if (count>1) {
-				rows = fileListTable.getSelectedRows();
-			}
-			if (row==-1){
-				JOptionPane.showMessageDialog(this, 
-						"Please select a file");
-				return;
-			}
-			String fileName = (String)this.tableModel.getValueAt(row, 1);
-			
-			if (fileName.equals("..")||fileName==null) {
-				JOptionPane.showMessageDialog(this, 
-						"Please select a file");
-			}
-			
-			try {
-				this.runCommand("delete "+this.pwd+"/"+fileName);
-				if (count>1) {
-					for (int i=1;i<count;i++) {
-						fileName = (String)this.tableModel.getValueAt(rows[i], 1);
-						this.runCommand("delete "+this.pwd+"/"+fileName);
-					}
-				}
-				this.ListFile(null);
-			} catch (IOException e1) {
-				JOptionPane.showMessageDialog(this, 
-						"Error occured when execute bypy command");
-			}
+			this.actionDeleteButton();
 		}
-		else if(e.getSource().equals(syncButton))
+		else if (source.equals(syncButton))
 		{
-			int size = syncFiles.size();
-			if (size>0 && remoteSyncFiles.size()==size) {
-				int i = 0;
-				for (i = 0; i < size; i++) {
-					this.addTask(new RunCommandThread(this,
-							"syncup "
-							+syncFiles.elementAt(i)
-							+" "
-							+remoteSyncFiles.elementAt(i),
-							true,
-							"syncup")
-					);
-//					new Thread(rct).start();
-				}
-			}
-			else {
-				JOptionPane.showMessageDialog(this,
-						"No directories to syncup\nyou can add syncfile in Options->settings");
-			}
+			this.actionSnycButton();
 		}
-		else if (e.getSource().equals(searchButton))
+		else if (source.equals(searchButton))
 		{
 			//--------search----------
 			String filter = JOptionPane.showInputDialog("Filter:");
@@ -590,18 +550,166 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
-		else if (e.getSource().equals(homeButton)) {
+		else if (source.equals(homeButton)) {
 			this.pwd = "/";
 			try {
 				this.ListFile(null);
 			} catch (IOException e1) {
 				System.out.println("Clicked Home:error occured when list file");
 			}
-		}
-		else if (e.getSource().equals(settingsItem)) {
+		} else if (source.equals(searchField)) {
+//			JOptionPane.showMessageDialog(this, "search "+searchField.getText());
+			String searchFileName = this.pwd + searchField.getText();
+			this.searchFile(searchFileName);
 			
 		}
 		
+	}
+	
+	private void actionSnycButton() {
+		int size = syncFiles.size();
+		if (size>0 && remoteSyncFiles.size()==size) {
+			int i = 0;
+			for (i = 0; i < size; i++) {
+				this.addTask(new RunCommandThread(this,
+						"syncup "
+						+syncFiles.elementAt(i)
+						+" "
+						+remoteSyncFiles.elementAt(i),
+						true,
+						"syncup")
+				);
+			}
+		}
+		else {
+			JOptionPane.showMessageDialog(this,
+					"您还未设置同步文件夹，在选项->设置内设置同步文件夹");
+		}
+	}
+
+
+
+	private void actionDeleteButton() {
+		int row = fileListTable.getSelectedRow();
+		int count = fileListTable.getSelectedRowCount();
+		int rows[] = null;
+		if (count>1) {
+			rows = fileListTable.getSelectedRows();
+		}
+		if (row==-1){
+			JOptionPane.showMessageDialog(this, 
+					"Please select a file");
+			return;
+		}
+		String fileName = (String)this.tableModel.getValueAt(row, 1);
+		
+		if (fileName.equals("..")||fileName==null) {
+			JOptionPane.showMessageDialog(this, 
+					"Please select a file");
+		}
+		
+		try {
+			this.runCommand("delete "+this.pwd+"/"+fileName);
+			if (count>1) {
+				for (int i=1;i<count;i++) {
+					fileName = (String)this.tableModel.getValueAt(rows[i], 1);
+					this.runCommand("delete "+this.pwd+"/"+fileName);
+				}
+			}
+			this.ListFile(null);
+		} catch (IOException e1) {
+			JOptionPane.showMessageDialog(this, 
+					"Error occured when execute bypy command");
+		}
+	}
+
+
+
+	private void actionUploadButton() {
+//		FileDialog fileDialog = new FileDialog(this, "upload", FileDialog.LOAD);
+//		fileDialog.setVisible(true);
+//		if(fileDialog.getDirectory()!=null) {
+//			String fileName = fileDialog.getDirectory();
+//			String remoteFileName = this.pwd;
+//			if (fileDialog.getFile()!=null) {
+//				fileName = fileName + fileDialog.getFile();
+//				remoteFileName += "/"+fileDialog.getFile();
+//			}
+//			System.out.println("upload "+fileName+" "+this.pwd);
+////				this.runCommand("upload "+fileName+" "+this.pwd);
+//			this.addTask(new RunCommandThread(this, 
+//					"upload "+fileName+" "+remoteFileName,
+//					true,
+//					"upload "+fileName)
+//			);
+//		}
+		
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		fileChooser.setDialogType(JFileChooser.CUSTOM_DIALOG);
+		fileChooser.setDialogTitle("选择上传文件");
+		int stat = fileChooser.showDialog(this, "上传");
+		if (stat==JFileChooser.APPROVE_OPTION) {
+			File selectFile = fileChooser.getSelectedFile();
+			String fileName = selectFile.getAbsolutePath();
+			System.out.println("upload "+fileName+" "+this.pwd+"/"+selectFile.getName());
+			this.addTask(new RunCommandThread(this, 
+					"upload "+fileName+" "+this.pwd+"/"+selectFile.getName(),
+					true,
+					"upload "+selectFile.getName()) );
+		}
+	}
+
+
+
+	private void actionDownloadButton() {
+		int row = fileListTable.getSelectedRow();
+		if (row==-1) {
+			JOptionPane.showMessageDialog(this, "请选择一个文件或目录");
+			return;
+		}
+		String type = (String)this.tableModel.getValueAt(row, 0);
+		String fileName = (String)this.tableModel.getValueAt(row, 1);
+		
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+		fileChooser.setDialogTitle("选择保存位置");
+		int stat = fileChooser.showSaveDialog(this);
+		
+		if (stat==JFileChooser.APPROVE_OPTION) {
+			File selectFile = fileChooser.getSelectedFile();
+
+			String localDirName = selectFile.getAbsolutePath();
+			if (type.equals("D")) {
+				System.out.println("downdir "+this.pwd+"/"+fileName
+						+" "+localDirName+"/"+fileName);
+				this.addTask(new RunCommandThread(this, 
+						"downdir "+this.pwd+"/"+fileName
+						+" "+localDirName+"/"+fileName,
+						true,
+						"download dir:"+fileName) );
+			} else if (type.equals("F")) {
+				System.out.println("downfile "+this.pwd+"/"+fileName
+						+" "+localDirName+"/"+fileName);
+				this.addTask(new RunCommandThread(this, 
+						"downfile "+this.pwd+"/"+fileName
+						+" "+localDirName+"/"+fileName,
+						true,
+						"download file:"+fileName) );
+			}
+		}
+	}
+
+
+
+	protected void searchFile(String filename) {
+		//TODO: bypy search 支持的是pwd/filename还是只支持filename????
+		//貌似只支持filename而且还不能是dirName
+		Process ps;
+		String inline;
+		if (filename==null||filename.length()<1) {
+			
+		}
 	}
 
 	protected void ListFile(String arg[]) throws IOException {
@@ -841,17 +949,17 @@ public class BaiduYunAssistant
 	
 	private void initMenuBar() {
 		//-----------Menu-------------
-		menuBar = new JMenuBar();
+		menuBar = new AMenuBar();
 		
-		optionMenu = new JMenu("Option");
-		settingsItem = new JMenuItem("Settings");
+		optionMenu = new AMenu("选项");
+		settingsItem = new AMenuItem("设置");
 		optionMenu.add(settingsItem);
 		menuBar.add(optionMenu);
 		settingsItem.addActionListener(this);
 
-		helpMenu = new JMenu("Help");
-		aboutItem = new JMenuItem("about");
-		cmdhelpItem = new JMenuItem("help", KeyEvent.VK_H);
+		helpMenu = new AMenu("Help");
+		aboutItem = new AMenuItem("about");
+		cmdhelpItem = new AMenuItem("help", KeyEvent.VK_H);
 		helpMenu.add(aboutItem);
 		helpMenu.add(cmdhelpItem);
 		menuBar.add(helpMenu);
@@ -864,8 +972,8 @@ public class BaiduYunAssistant
 	}
 	
 	private void initCommand() {
-		cmdJLabel = new JLabel("command");
-		cmdfField = new JTextField();
+		cmdJLabel = new ALabel("command");
+		cmdfField = new ATextField();
 		
 		cmdfField.setForeground(Color.gray);
 		cmdfField.setFont(new Font("serif",Font.BOLD, 12));
@@ -873,6 +981,7 @@ public class BaiduYunAssistant
 		
 		cmdfField.addKeyListener(this);
 		cmdfField.addFocusListener(this);
+		
 		leftContainer.add(cmdJLabel);
 		leftContainer.add(cmdfField);
 		cmdfField.addActionListener(this);
@@ -886,10 +995,31 @@ public class BaiduYunAssistant
 		gbc.gridwidth = 0;
 		leftMainLayout.setConstraints(cmdfField, gbc);
 	}
+//
+//    private class AntiliasText extends JTextArea {
+//        public void paint(Graphics g) {
+//            Graphics2D g2 = (Graphics2D) g;
+//            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+//                                RenderingHints.VALUE_ANTIALIAS_ON);
+//            super.paint(g2);
+//        }
+//    }
 	
 	private void initShellCommandOutput() {
-		cmdoutputLabel = new JLabel("output");
-		cmdoutputArea = new JTextArea();
+		cmdoutputLabel = new ALabel("output");
+		cmdoutputArea = new ATextArea();
+//		cmdoutputArea = new JTextArea(){
+//			/**
+//			 * 看锯齿处理
+//			 */
+//			@Override
+//			public void paint(Graphics g) {
+//				Graphics2D g2 = (Graphics2D) g;
+//				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
+//						RenderingHints.VALUE_ANTIALIAS_ON);
+//				super.paint(g2);
+//			}
+//		};
 		cmdoutputArea.setFont(new Font("Monospaced", Font.BOLD, 12));
 		cmdoutputJScrollPane = new JScrollPane(cmdoutputArea);// set scroll
 		cmdoutputArea.setLineWrap(true);
@@ -907,10 +1037,29 @@ public class BaiduYunAssistant
 		gbc.weighty = 0.3;
 		leftMainLayout.setConstraints(cmdoutputJScrollPane, gbc);
 	}
+
+	private void initSearchField() {
+		searchLabel = new ALabel("Search");
+		searchField = new ATextField();
+		
+		leftContainer.add(searchLabel);
+		leftContainer.add(searchField);
+		
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 1;
+		gbc.weightx = 0;
+		gbc.weighty = 0;
+		leftMainLayout.setConstraints(searchLabel, gbc);
+		gbc.gridwidth = 0;
+		leftMainLayout.setConstraints(searchField, gbc);
+		
+		searchField.addActionListener(this);
+		
+	}
 	
 	private void initFileTable() {
-		jl_lb = new JLabel("File List");
-		fileListTable = new JTable(){
+		jl_lb = new ALabel("File List");
+		fileListTable = new ATable(){
 			/*
 			 * 重载isCellEditable方法使得表格元素无法编辑
 			 **/
@@ -920,7 +1069,7 @@ public class BaiduYunAssistant
 			}
 		};
 //		fileListTable.setEnabled(false);
-//		fileListTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+//		fileListTable.setAutoResizeMode(ATable.AUTO_RESIZE_ALL_COLUMNS);
 		
 		tableModel = (DefaultTableModel)fileListTable.getModel();
 		tableModel.addColumn("Type");
@@ -950,8 +1099,8 @@ public class BaiduYunAssistant
 	}
 
 	private void initAccessToken() {
-		tokenTextField_lb = new JLabel("PCS Token");
-		tokenTextField = new JTextField();
+		tokenTextField_lb = new ALabel("PCS Token");
+		tokenTextField = new ATextField();
 		String tokenString =  this.checkTokenFile();
 		if (tokenString!=null) {
 //			tokenTextField.setText(tokenString);
@@ -977,7 +1126,7 @@ public class BaiduYunAssistant
 //		gbc.gridheight = 1;
 		gbc.weightx = 1;
 		leftMainLayout.setConstraints(tokenTextField, gbc);
-		tokenRefreshButton = new JButton("Refresh Token");
+		tokenRefreshButton = new AButton("Refresh Token");
 		tokenRefreshButton.addActionListener(this);
 		//------refresh token button--------
 		leftContainer.add(tokenRefreshButton);
@@ -1021,48 +1170,49 @@ public class BaiduYunAssistant
 	}
 
 
-	private void initButtons() {
+	private void initBottomButtons() {
+		//----------init GridBagConstraints------
 		gbc.fill = GridBagConstraints.HORIZONTAL;
-		//--------refresh--------
-		refreshButton = new JButton("Refresh");
-		refreshButton.addActionListener(this);
-		leftContainer.add(refreshButton);
 		gbc.gridwidth = 1;
 		gbc.weightx = 1;
 		gbc.ipadx = 0; // 这一行最右侧的空间
+		//--------refresh--------
+		refreshButton = new AButton("刷新");
+		refreshButton.addActionListener(this);
+		leftContainer.add(refreshButton);
 		leftMainLayout.setConstraints(refreshButton, gbc);
 		//---------home---------
-		homeButton = new JButton("Home");
+		homeButton = new AButton("Home");
 		homeButton.addActionListener(this);
 		leftContainer.add(homeButton);
 		leftMainLayout.setConstraints(homeButton, gbc);
 		//---------upload-------
-		uploadButton = new JButton("Upload");
+		uploadButton = new AButton("上传");
 		uploadButton.addActionListener(this);
 		leftContainer.add(uploadButton);
 		leftMainLayout.setConstraints(uploadButton, gbc);
 		//---------download-----
-		downloadButton = new JButton("Download");
+		downloadButton = new AButton("下载");
 		downloadButton.addActionListener(this);
 		leftContainer.add(downloadButton);
 		leftMainLayout.setConstraints(uploadButton, gbc);
 		//----------newDir--------
-		newDirButton = new JButton("New Dir");
+		newDirButton = new AButton("New Dir");
 		newDirButton.addActionListener(this);
 		leftContainer.add(newDirButton);
 		leftMainLayout.setConstraints(newDirButton, gbc);
 		//----------delete-----
-		deleteButton = new JButton("Delete");
+		deleteButton = new AButton("删除");
 		deleteButton.addActionListener(this);
 		leftContainer.add(deleteButton);
 		leftMainLayout.setConstraints(deleteButton, gbc);
 		//----------sync-------
-		syncButton = new JButton("Sync");
+		syncButton = new AButton("同步");
 		syncButton.addActionListener(this);
 		leftContainer.add(syncButton);
 		leftMainLayout.setConstraints(syncButton, gbc);
 		//--------search---------
-		searchButton = new JButton("Search");
+		searchButton = new AButton("搜索");
 		searchButton.addActionListener(this);
 		leftContainer.add(searchButton);
 		leftMainLayout.setConstraints(searchButton, gbc);
@@ -1071,7 +1221,7 @@ public class BaiduYunAssistant
 	
 
 	private void initSpaceBar() {
-		spaceJLabel = new JLabel("space:");
+		spaceJLabel = new ALabel("space:");
 		leftContainer.add(spaceJLabel);
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
@@ -1086,8 +1236,8 @@ public class BaiduYunAssistant
 	}
 	
 	private void initTaskTable() {
-		this.taskLabel = new JLabel("Task List");
-		this.taskTable = new JTable(){
+		this.taskLabel = new ALabel("Task List");
+		this.taskTable = new ATable(){
 			/*
 			 * 重载isCellEditable方法使得表格元素无法编辑
 			 **/

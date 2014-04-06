@@ -3,6 +3,8 @@
  */
 package com;
 
+import com.Antilias.*;
+
 import java.awt.Container;
 import java.awt.Dialog;
 import java.awt.FileDialog;
@@ -23,13 +25,13 @@ import java.util.Vector;
 
 import javax.naming.directory.DirContext;
 import javax.naming.spi.DirectoryManager;
-import javax.swing.JButton;
+//import javax.swing.AButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
-import javax.swing.JLabel;
+//import javax.swing.ALabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
-import javax.swing.JTable;
+//import javax.swing.ATable;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -38,15 +40,15 @@ import javax.swing.table.DefaultTableModel;
  */
 public class SettingsDialog extends JDialog implements ActionListener, MouseListener {
 	
-	private JButton addButton;
-	private JButton deleteButton;
-	private JButton deleteAllButton;
+	private AButton addButton;
+	private AButton deleteButton;
+	private AButton deleteAllButton;
 	
 	private BaiduYunAssistant owner;
 	
-	private JTable fileListTable;
+	private ATable fileListTable;
 	private DefaultTableModel tableModel;
-	private JLabel syncFileLabel;
+	private ALabel syncFileLabel;
 	
 	private Container container;
 	private JScrollPane tableJScrollPane;
@@ -98,18 +100,18 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		gbc.weightx = 1;
 		gbc.ipadx = 0; // 这一行最右侧的空间
 		//------------Add-------------
-		addButton = new JButton("Add");
+		addButton = new AButton("添加");
 		container.add(addButton);
 		gbc.gridwidth = 1;
 		addButton.addActionListener(this);
 		mainLayout.setConstraints(addButton, gbc);
 		//------------Delete-------------
-		deleteButton = new JButton("Delete");
+		deleteButton = new AButton("删除");
 		container.add(deleteButton);
 		deleteButton.addActionListener(this);
 		mainLayout.setConstraints(deleteButton, gbc);
 		//-------------Delete All---------
-		deleteAllButton = new JButton("Delete All");
+		deleteAllButton = new AButton("删除所有");
 		container.add(deleteAllButton);
 		deleteAllButton.addActionListener(this);
 		gbc.gridwidth = 0;
@@ -123,7 +125,7 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		if (source.equals(addButton)) {			
 			JFileChooser fileChooser = new JFileChooser();
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
+//			fileChooser.setDialogType(JFileChooser.OPEN_DIALOG);
 			fileChooser.setDialogTitle("choose sync dir or file");
 			int stat = fileChooser.showOpenDialog(this);
 			
@@ -163,15 +165,15 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	}
 
 	private void initSyncFileTable() {
-		syncFileLabel = new JLabel("Sync File List");
-		fileListTable = new JTable(){
+		syncFileLabel = new ALabel("Sync File List");
+		fileListTable = new ATable(){
 			@Override
 			public boolean isCellEditable(int row, int column) {
 				return false;
 			}
 		};
 //		fileListTable.setEnabled(false);
-//		fileListTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+//		fileListTable.setAutoResizeMode(ATable.AUTO_RESIZE_ALL_COLUMNS);
 		
 		tableModel = (DefaultTableModel)fileListTable.getModel();
 		tableModel.addColumn("Local Dir");
