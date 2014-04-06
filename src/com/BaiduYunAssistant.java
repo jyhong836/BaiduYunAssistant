@@ -5,6 +5,7 @@ import javax.imageio.ImageIO;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JLayer;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -14,8 +15,10 @@ import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+import javax.swing.Timer;
 
 import java.awt.AlphaComposite;
+import java.awt.BorderLayout;
 import java.awt.Canvas;
 import java.awt.Color;
 import java.awt.Container;
@@ -116,12 +119,16 @@ public class BaiduYunAssistant
 //		return UID;
 //	}
 	
+	/* Layout and Container */
 	private GridBagLayout mainLayout;
+	private JPanel mainPanel;
+	private LoadingLayer loadingLayerUI;
 	
 	private Container rightContainer;
 	private GridBagLayout rightMainLayout;
 	private Container leftContainer;
 	private GridBagLayout leftMainLayout;
+	
 	private GridBagConstraints gbc;
 	
 	/*---------Left Grid Layout-----------*/
@@ -178,6 +185,7 @@ public class BaiduYunAssistant
 	public final static String dataFolderString = new String("data/");
 	private ArrayBlockingQueue<String> cmdBuf;
 	//-----------------------
+	protected String bypyArgument = "bypy ";// argument shoud be add after this
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
@@ -211,16 +219,15 @@ public class BaiduYunAssistant
 		splashWindow.setText("check for token access...");
 		this.checkTokenFile();
 		splashWindow.setText("check for token access...success");
-		
+
 		
 		
 		//---------init JFrame---------
-//		System.out.println(this.hashCode());
-//		this.setFont(new Font(Font.MONOSPACED,Font.ITALIC,12));
 		//----import data---
 		if(datapackage!=null)
 		{
 			this.datapackage = datapackage;
+			this.bypyArgument = datapackage.bypyArgument;
 			this.pwd = datapackage.pwd;
 			this.cloudSpace = datapackage.cloudSpace;
 			this.usedSpace = datapackage.usedSpace;
@@ -237,45 +244,47 @@ public class BaiduYunAssistant
 			taskVector = new Vector<RunCommandThread>();
 		}
 		
-//		Graphics2D graphics2d =(Graphics2D)(this.getGraphics());
-//		graphics2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-//				RenderingHints.VALUE_ANTIALIAS_ON);
-		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
 				framewidth,
 				frameheight);
-//		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//        this.setFont(new Font("Serif", Font.BOLD, 20));
 		this.setTitle("Baidu Yun Assistant");
 		Image BaiduYunIcon = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");;
 		this.setIconImage(BaiduYunIcon);
-		//--------------------------------
+		//--------------END:init JFrame------------------
 		
 		//----------setLayout-------------
 		mainLayout = new GridBagLayout();
 		leftMainLayout = new GridBagLayout();
 		rightMainLayout = new GridBagLayout();
-		this.setLayout(mainLayout);
+
+		//--------set LayerUI-----
+		mainPanel = new JPanel();
+		mainPanel.setLayout(mainLayout);
+		loadingLayerUI = new LoadingLayer();
+		JLayer<JPanel> jLayer = new JLayer<JPanel>(mainPanel, loadingLayerUI);
+		this.setLayout(new BorderLayout());
+		this.add(jLayer);
+
+		//----------init GridBagConstraints---------
 		gbc = new GridBagConstraints();
-		
 		gbc.anchor = GridBagConstraints.CENTER;// this not work
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridwidth = 2;
 //		gbc.gridheight = 0;
 		gbc.weightx = 1;
 		gbc.weighty = 1;
+		
+		//----------init left and right containers----
+		//LEFT
 		leftContainer = new Container();
-		this.add(leftContainer);
+		mainPanel.add(leftContainer);
 		leftContainer.setLayout(leftMainLayout);
 		mainLayout.setConstraints(leftContainer, gbc);
-		
-//		gbc.gridwidth = 0;
-////		gbc.gridheight = 0;
+		//RIGHT
 		gbc.weightx = 5;
-//		gbc.weighty = 1;
 		rightContainer = new Container();
-		this.add(rightContainer);
+		mainPanel.add(rightContainer);
 		rightContainer.setLayout(rightMainLayout);
 		mainLayout.setConstraints(rightContainer, gbc);
 		//------------------------------------
@@ -407,7 +416,7 @@ public class BaiduYunAssistant
 				System.out.println("Sorry, your System not support the Nimbus Theme");
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 			} 
-			setUIFont(new FontUIResource(Font.SANS_SERIF, Font.PLAIN, 12));
+//			setUIFont(new FontUIResource(Font.SANS_SERIF, Font.PLAIN, 14));
 			
 			GraphicsEnvironment environment = GraphicsEnvironment.getLocalGraphicsEnvironment();
 			// GraphicsEnvironment是一个抽象类，不能实例化，只能用其中的静态方法获取一个实例
@@ -476,23 +485,16 @@ public class BaiduYunAssistant
 		}
 		else if(source.equals(refreshButton))
 		{
-			try {
-//				this.runCommand("list /");
-				this.ListFile(null);
-				this.runCommand("quota");
-				spaceBar.setValue((int)(this.usedSpace/this.cloudSpace*1000));
-				spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
-						Math.floor(this.usedSpace/this.cloudSpace*1000)/10+"%");
-//				ListFile(null);
-//				java.net.URI uri=new java.net.URI("http://www.baidu.com"); 
-//				java.awt.Desktop.getDesktop().browse(uri);
-			} catch (IOException e1) {
-				this.cmdoutputArea.setText("some error occurred in execute 'list' command");
-				e1.printStackTrace();
-			}
-//			catch (URISyntaxException e1) {
-//				e1.printStackTrace();
-//			}
+        	loadingLayerUI.start(); 
+        	this.setEnabled(false);
+        	new Thread(new RunCommandThread(this, "quota", true, null){
+        		@Override
+        		public void extTask() {
+        			BaiduYunAssistant.this.spaceBar.setValue((int)(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000));
+        			BaiduYunAssistant.this.spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
+    						Math.floor(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000)/10+"%");
+        		}
+        	}).start();
 		}
 		else if (source.equals(uploadButton))
 		{
@@ -708,7 +710,7 @@ public class BaiduYunAssistant
 		String cmd = "search "+filename;
 		this.cmdoutputArea.append("[bypy]#"+cmd);
 		System.out.println("[bypy]#"+cmd);
-		ps = Runtime.getRuntime().exec("bypy "+cmd); // throw IOException
+		ps = Runtime.getRuntime().exec(bypyArgument+cmd); // throw IOException
 		BufferedReader br = new BufferedReader(new InputStreamReader(
 				ps.getInputStream()));
 		while((inline = br.readLine())!=null)
@@ -752,7 +754,7 @@ public class BaiduYunAssistant
 		} 
 		this.cmdoutputArea.append("[bypy]#"+cmd);
 		System.out.println("[bypy]#"+cmd);
-		ps = Runtime.getRuntime().exec("bypy "+cmd); // throw IOException
+		ps = Runtime.getRuntime().exec(bypyArgument+cmd); // throw IOException
 		BufferedReader br = new BufferedReader(new InputStreamReader(
 				ps.getInputStream()));
 		while((inline = br.readLine())!=null)
@@ -822,8 +824,8 @@ public class BaiduYunAssistant
 			else if(arglist[0].equals("quota"))
 			{
 				this.cmdoutputArea.setText("[bypy]# "+cmd);
-				System.out.println("run:"+"bypy "+cmd);
-				ps = Runtime.getRuntime().exec("bypy "+cmd);
+				System.out.println("run:"+bypyArgument+cmd);
+				ps = Runtime.getRuntime().exec(bypyArgument+cmd);
 				BufferedReader br = new BufferedReader(new InputStreamReader(
 						ps.getInputStream()));
 				String inline;
@@ -850,8 +852,8 @@ public class BaiduYunAssistant
 			}
 			else {
 				this.cmdoutputArea.append("\n[bypy]# "+cmd);
-				System.out.println("run:"+"bypy "+cmd);
-				ps = Runtime.getRuntime().exec("bypy "+cmd);
+				System.out.println("run:"+bypyArgument+cmd);
+				ps = Runtime.getRuntime().exec(bypyArgument+cmd);
 			}
 		}
 		BufferedReader br = new BufferedReader(new InputStreamReader(
@@ -919,6 +921,7 @@ public class BaiduYunAssistant
 			if (this.datapackage==null) {
 				this.datapackage = new DataPackage();
 			}
+			datapackage.bypyArgument = this.bypyArgument;
 			datapackage.pwd = this.pwd;
 			datapackage.cloudSpace = this.cloudSpace;
 			datapackage.usedSpace = this.usedSpace;
@@ -1347,7 +1350,7 @@ public class BaiduYunAssistant
 	 * @param rct remove RunCommandThread from the taskVector,but will not kill it
 	 * @return
 	 */
-	protected boolean removeTask(RunCommandThread rct) {
+	private boolean removeTask(RunCommandThread rct) {
 		this.taskVector.remove(rct);
 //		this.taskTableModel.removeRow(rct.getIndex());
 		int count = taskTableModel.getRowCount();
@@ -1364,6 +1367,16 @@ public class BaiduYunAssistant
 	
 	protected int getTaskIndex(RunCommandThread rct) {
 		return this.taskVector.indexOf(rct);
+	}
+	
+	protected void taskComplete(RunCommandThread rct) {
+		if (taskVector.indexOf(rct)!=-1) {
+			this.removeTask(rct);
+			return;
+		} else {
+			this.loadingLayerUI.stop();
+			this.setEnabled(true);
+		}
 	}
 
 

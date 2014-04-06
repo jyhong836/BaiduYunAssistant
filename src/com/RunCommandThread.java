@@ -127,21 +127,35 @@ public class RunCommandThread implements Runnable {
 					"Task "+ID+"("
 					+this.hashCode()
 					+") , complete");
-		} else {
-			JOptionPane.showMessageDialog(owner, 
-					cmdList[0]
-					+" , complete");
-		}
+		} 
+//		else {
+//			JOptionPane.showMessageDialog(owner, 
+//					cmdList[0]
+//					+" , complete");
+//		}
 		try {
 			if (refresh)
 				this.owner.ListFile(null);
 		} catch (IOException e) {
 			JOptionPane.showMessageDialog(owner, "ERROR when list files");
 		}
+		
+		//extra works
+		extTask();
 
+//		if (this.owner)
 		//自行从TaskVector上删除
-		this.owner.removeTask(this);
+//		this.owner.removeTask(this);
+		this.owner.taskComplete(this);
 	}
+	
+	/**
+	 * 当需要完成额外的任务时，覆盖此方法
+	 */
+	public void extTask() {
+		
+	}
+	
 	/**
 	 * @return the index
 	 */

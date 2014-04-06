@@ -28,6 +28,7 @@ public class DataPackage implements Serializable{
 	protected Vector<RunCommandThread> taskVector;
 	protected Vector<String> syncFiles;
 	protected Vector<String> remoteSyncFiles;
+	protected String bypyArgument = "bypy ";// argument shoud be add after this
 
 	/**
 	 * 

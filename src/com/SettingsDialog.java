@@ -30,6 +30,7 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 //import javax.swing.ALabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 //import javax.swing.ATable;
 import javax.swing.table.DefaultTableModel;
@@ -39,16 +40,21 @@ import javax.swing.table.DefaultTableModel;
  *
  */
 public class SettingsDialog extends JDialog implements ActionListener, MouseListener {
+
+	private BaiduYunAssistant owner;
 	
 	private AButton addButton;
 	private AButton deleteButton;
 	private AButton deleteAllButton;
 	
-	private BaiduYunAssistant owner;
-	
 	private ATable fileListTable;
 	private DefaultTableModel tableModel;
 	private ALabel syncFileLabel;
+	
+	private ALabel argumentLabel;
+	private ATextField argumentField;
+	
+	private AButton applyButton;
 	
 	private Container container;
 	private JScrollPane tableJScrollPane;
@@ -75,18 +81,62 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		//-------init buttons------
 		this.initButtons();
 		
-//		//--------test-----------
-//		JFileChooser jfChooser = new JFileChooser();
-//		this.add(jfChooser);
-		
 		//-------init sync file table----
 		initSyncFileTable();
 		refreshSyncFileTable();
 		
+		//---------init argument field----
+		initArgumentField();
+		
+		//--------init applyButton-----
+		initApplyButton();
+		
 		this.setBounds(owner.getBounds().x,
-				owner.getBounds().y, 300, 200);
+				owner.getBounds().y, 300, 400);
 //		JOptionPane.
 
+	}
+
+	private void initApplyButton() {
+		JPanel applySpaceJPanel1 = new JPanel();
+		JPanel applySpaceJPanel2 = new JPanel();
+		applyButton = new AButton("应用");
+		gbc.fill = GridBagConstraints.NONE;
+		container.add(applySpaceJPanel1);
+		container.add(applySpaceJPanel2);
+		container.add(applyButton);
+		
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridwidth = 1;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.gridheight = 1;
+		mainLayout.setConstraints(applySpaceJPanel1, gbc);
+		mainLayout.setConstraints(applySpaceJPanel2, gbc);
+		mainLayout.setConstraints(applyButton, gbc);
+		
+		applyButton.addActionListener(this);
+		
+	}
+
+	private void initArgumentField() {
+		//----------init GridBagConstraints------
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridwidth = 1;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.ipadx = 0; // 这一行最右侧的空间
+		
+		this.argumentLabel = new ALabel("参数");
+		this.argumentField = new ATextField(this.owner.bypyArgument);
+		container.add(argumentLabel);
+		gbc.gridwidth = 1;
+		mainLayout.setConstraints(argumentLabel, gbc);
+		container.add(argumentField);
+		gbc.gridwidth = 0;
+		mainLayout.setConstraints(argumentField, gbc);
+//		addButton.addActionListener(this);
+		
 	}
 
 	/**
@@ -98,7 +148,7 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.gridwidth = 1;
 		gbc.weightx = 1;
-		gbc.ipadx = 0; // 这一行最右侧的空间
+		gbc.ipadx = 10; // 这一行最右侧的空间
 		//------------Add-------------
 		addButton = new AButton("添加");
 		container.add(addButton);
@@ -160,6 +210,8 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 			owner.syncFiles.removeAllElements();
 			owner.remoteSyncFiles.removeAllElements();
 			this.refreshSyncFileTable();
+		} else if(source.equals(applyButton)) {
+			owner.bypyArgument = this.argumentField.getText();
 		}
 		
 	}
