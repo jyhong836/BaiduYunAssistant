@@ -16,6 +16,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.Vector;
@@ -24,6 +25,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.spi.DirectoryManager;
 import javax.swing.JButton;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
@@ -38,11 +40,14 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	
 	private JButton addButton;
 	private JButton deleteButton;
+	private JButton deleteAllButton;
 	
 	private BaiduYunAssistant owner;
+	
 	private JTable fileListTable;
 	private DefaultTableModel tableModel;
 	private JLabel syncFileLabel;
+	
 	private Container container;
 	private JScrollPane tableJScrollPane;
 	private GridBagLayout mainLayout;
@@ -65,41 +70,69 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		gbc.fill = GridBagConstraints.BOTH;
 		gbc.gridwidth = 0;
 		
-		addButton = new JButton("Add");
-		container.add(addButton);
-		gbc.gridwidth = 1;
-		addButton.addActionListener(this);
-		mainLayout.setConstraints(addButton, gbc);
-		deleteButton = new JButton("Delete");
-		container.add(deleteButton);
-		deleteButton.addActionListener(this);
-		gbc.gridwidth = 0;
-		mainLayout.setConstraints(deleteButton, gbc);
+		//-------init buttons------
+		this.initButtons();
 		
+//		//--------test-----------
+//		JFileChooser jfChooser = new JFileChooser();
+//		this.add(jfChooser);
+		
+		//-------init sync file table----
 		initSyncFileTable();
 		refreshSyncFileTable();
+		
 		this.setBounds(owner.getBounds().x,
 				owner.getBounds().y, 300, 200);
 //		JOptionPane.
 
 	}
 
+	/**
+	 * @Method initButtons 
+	 * 		Add, Delete, DeleteAll
+	 */
+	private void initButtons() {
+		//----------init GridBagConstraints------
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridwidth = 1;
+		gbc.weightx = 1;
+		gbc.ipadx = 0; // 这一行最右侧的空间
+		//------------Add-------------
+		addButton = new JButton("Add");
+		container.add(addButton);
+		gbc.gridwidth = 1;
+		addButton.addActionListener(this);
+		mainLayout.setConstraints(addButton, gbc);
+		//------------Delete-------------
+		deleteButton = new JButton("Delete");
+		container.add(deleteButton);
+		deleteButton.addActionListener(this);
+		mainLayout.setConstraints(deleteButton, gbc);
+		//-------------Delete All---------
+		deleteAllButton = new JButton("Delete All");
+		container.add(deleteAllButton);
+		deleteAllButton.addActionListener(this);
+		gbc.gridwidth = 0;
+		mainLayout.setConstraints(deleteAllButton, gbc);
+		
+	}
+
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if (e.getSource().equals(addButton)) {
-			FileDialog fileDialog = new FileDialog(this, "upload", FileDialog.LOAD);
-			fileDialog.setVisible(true);
-			if(fileDialog.getDirectory()!=null) {
-				String fileName = fileDialog.getDirectory();
-				String dirName1[] = fileName.split("/");
-				String dirName = dirName1[dirName1.length-1];
-				owner.syncFiles.add(fileName);
-				owner.remoteSyncFiles.add("/"+"syncdir"+"/"+dirName);
-				System.out.println("add local dir:"+fileName);
-				System.out.println("add remote dir"+"/"+"syncdir"+"/"+dirName);
+		Object source = e.getSource();
+		if (source.equals(addButton)) {			
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+			fileChooser.setDialogTitle("choose sync dir or file");
+			int stat = fileChooser.showOpenDialog(this);
+			
+			if (stat==JFileChooser.APPROVE_OPTION) {
+				File selectFile = fileChooser.getSelectedFile();
+				owner.syncFiles.add(selectFile.getAbsolutePath());
+				owner.remoteSyncFiles.add(selectFile.getName());
 				this.refreshSyncFileTable();
 			}
-		} else if (e.getSource().equals(deleteButton)) {
+		} else if (source.equals(deleteButton)) {
 //			int row = fileListTable.getSelectedRow();
 			int count = fileListTable.getSelectedRowCount();
 			int rows[] = null;
@@ -129,6 +162,8 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 				}
 			}
 			this.refreshSyncFileTable();
+		} else if(source.equals(deleteAllButton)) {
+			
 		}
 		
 	}
