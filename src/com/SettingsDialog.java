@@ -165,7 +165,7 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	}
 
 	private void initSyncFileTable() {
-		syncFileLabel = new ALabel("Sync File List");
+		syncFileLabel = new ALabel("同步列表");
 		fileListTable = new ATable(){
 			@Override
 			public boolean isCellEditable(int row, int column) {

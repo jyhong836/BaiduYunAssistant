@@ -71,7 +71,7 @@ import com.Antilias.*;
  * @author jyhong
  * @version 1.00
  * created with Eclipse Kepler
- * JRE version:1.6,1.7
+ * JRE version:1.7
  * OS: Linux2.6, Ubuntu10.04.3
  * 
  * TODO:还不支持批量选择上传和下载
@@ -377,10 +377,10 @@ public class BaiduYunAssistant
 			System.out.println("Not a Linux System, exit");
 			return;
 		}
-		if (Double.valueOf(jreVersion)<1.6) {
+		if (Double.valueOf(jreVersion)<1.7) {
 			System.out.println("WARNING:the JRE version("
 					+jreVersion
-					+") is lower than 1.6");
+					+") is lower than 1.7");
 			return;
 		}
 		//-----------UIManage------------
