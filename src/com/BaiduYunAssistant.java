@@ -2,20 +2,12 @@ package com;
 
 
 import javax.imageio.ImageIO;
-//import javax.swing.AButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-//import javax.swing.ALabel;
-//import javax.swing.AMenu;
-//import javax.swing.AMenuBar;
-//import javax.swing.AMenuItem;
 import javax.swing.JPanel;
-//import javax.swing.AProgressBar;
 import javax.swing.JScrollPane;
-//import javax.swing.ATable;
 import javax.swing.JTextArea;
-//import javax.swing.ATextField;
 import javax.swing.JTree;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -47,6 +39,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
@@ -76,11 +69,15 @@ import com.Antilias.*;
 /**
  * 
  * @author jyhong
+ * @version 1.00
+ * created with Eclipse Kepler
+ * JRE version:1.6,1.7
+ * OS: Linux2.6, Ubuntu10.04.3
+ * 
+ * TODO:还不支持批量选择上传和下载
  * TODO:刷新之后下载/更新云端文件目录到本地
- * TODO：sync，先检查
- * TODO:字体设置
+ * TODO：sync，先检查:syncup会自动覆盖云端内容旧的文件，不会上传相同文件
  * TODO:如果出故障了，应当有功能按键允许用户重新新建一个JFrame
- * TODO:TaskQueue,每次创建RunCommandThread都在TaskQueue新建一个，TaskQueue最好是一个线程List
  *
  */
 public class BaiduYunAssistant 
@@ -147,6 +144,8 @@ public class BaiduYunAssistant
 	private JScrollPane cmdoutputJScrollPane;
 	private ALabel searchLabel;
 	private ATextField searchField;
+	private ALabel pwdLabel;
+	private ALabel pwdTextLabel;
 	private DefaultTableModel tableModel;
 	private ALabel jl_lb;
 	private ATable fileListTable;
@@ -165,7 +164,7 @@ public class BaiduYunAssistant
 	private AButton newDirButton;
 	private AButton deleteButton;
 	private AButton syncButton;
-	private AButton searchButton;
+//	private AButton searchButton;
 	/*---------END:Left Grid Layout-----------*/
 	
 	/*----------Right Grid Layout---------*/
@@ -296,6 +295,9 @@ public class BaiduYunAssistant
 		//--------------init search bottons---------
 		this.initSearchField();
 		
+		//-------------init pwd componets---------
+		this.initPwdComponents();
+		
 		//---------------Table---------------
 		this.initFileTable();
 		
@@ -351,7 +353,7 @@ public class BaiduYunAssistant
 		 if (value instanceof javax.swing.plaf.FontUIResource)
 		 UIManager.put(key, f);
 		 }
-		 }
+	 }
 		 
 
 	public static void main(String[] args) {
@@ -540,16 +542,16 @@ public class BaiduYunAssistant
 		{
 			this.actionSnycButton();
 		}
-		else if (source.equals(searchButton))
-		{
-			//--------search----------
-			String filter = JOptionPane.showInputDialog("Filter:");
-			try {
-				this.runCommand("search "+filter);
-			} catch (IOException e1) {
-				e1.printStackTrace();
-			}
-		}
+//		else if (source.equals(searchButton))
+//		{
+//			//--------search----------
+//			String filter = JOptionPane.showInputDialog("Filter:");
+//			try {
+//				this.runCommand("search "+filter);
+//			} catch (IOException e1) {
+//				e1.printStackTrace();
+//			}
+//		}
 		else if (source.equals(homeButton)) {
 			this.pwd = "/";
 			try {
@@ -558,9 +560,18 @@ public class BaiduYunAssistant
 				System.out.println("Clicked Home:error occured when list file");
 			}
 		} else if (source.equals(searchField)) {
+			/** TODO:bypy的search命令只支持搜索完整的文件名字，不支持展开
+			 * 但是支持关键字搜索，使用.py可以搜到所有名字中含有.py的文件
+			 * 但搜索*.py不会搜索表达式，而是搜索含有“*.py”的文件
+			 */
 //			JOptionPane.showMessageDialog(this, "search "+searchField.getText());
-			String searchFileName = this.pwd + searchField.getText();
-			this.searchFile(searchFileName);
+			String searchFileName = searchField.getText();
+			try {
+				this.searchFile(searchFileName);
+			} catch (IOException e1) {
+				JOptionPane.showMessageDialog(this,
+						"ERROR: when run search");
+			}
 			
 		}
 		
@@ -626,23 +637,6 @@ public class BaiduYunAssistant
 
 
 	private void actionUploadButton() {
-//		FileDialog fileDialog = new FileDialog(this, "upload", FileDialog.LOAD);
-//		fileDialog.setVisible(true);
-//		if(fileDialog.getDirectory()!=null) {
-//			String fileName = fileDialog.getDirectory();
-//			String remoteFileName = this.pwd;
-//			if (fileDialog.getFile()!=null) {
-//				fileName = fileName + fileDialog.getFile();
-//				remoteFileName += "/"+fileDialog.getFile();
-//			}
-//			System.out.println("upload "+fileName+" "+this.pwd);
-////				this.runCommand("upload "+fileName+" "+this.pwd);
-//			this.addTask(new RunCommandThread(this, 
-//					"upload "+fileName+" "+remoteFileName,
-//					true,
-//					"upload "+fileName)
-//			);
-//		}
 		
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -702,13 +696,39 @@ public class BaiduYunAssistant
 
 
 
-	protected void searchFile(String filename) {
+	protected void searchFile(String filename) throws IOException {
 		//TODO: bypy search 支持的是pwd/filename还是只支持filename????
 		//貌似只支持filename而且还不能是dirName
 		Process ps;
 		String inline;
-		if (filename==null||filename.length()<1) {
-			
+		boolean flag = false;
+		if (filename==null || filename.length()<1) {
+			return;
+		}
+		String cmd = "search "+filename;
+		this.cmdoutputArea.append("[bypy]#"+cmd);
+		System.out.println("[bypy]#"+cmd);
+		ps = Runtime.getRuntime().exec("bypy "+cmd); // throw IOException
+		BufferedReader br = new BufferedReader(new InputStreamReader(
+				ps.getInputStream()));
+		while((inline = br.readLine())!=null)
+		{
+			this.cmdoutputArea.append('\n'+inline);
+			if (flag)
+			{
+				if (!Character.isLetter(inline.charAt(0)))
+				{
+					break;
+				}
+				String col[] = inline.split(" ");
+				tableModel.addRow(col);
+			}
+			if (inline.startsWith("Found:"))
+			{
+				if (tableModel.getRowCount()>0)
+					tableModel.setRowCount(0);// clear
+				flag = true;
+			}
 		}
 	}
 
@@ -972,12 +992,12 @@ public class BaiduYunAssistant
 	}
 	
 	private void initCommand() {
-		cmdJLabel = new ALabel("command");
+		cmdJLabel = new ALabel("命令");
 		cmdfField = new ATextField();
 		
 		cmdfField.setForeground(Color.gray);
 		cmdfField.setFont(new Font("serif",Font.BOLD, 12));
-		cmdfField.setText("input command here");
+		cmdfField.setText("在这里输入bypy命令，或者输入$+shell命令");
 		
 		cmdfField.addKeyListener(this);
 		cmdfField.addFocusListener(this);
@@ -1006,20 +1026,9 @@ public class BaiduYunAssistant
 //    }
 	
 	private void initShellCommandOutput() {
-		cmdoutputLabel = new ALabel("output");
+		cmdoutputLabel = new ALabel("输出");
 		cmdoutputArea = new ATextArea();
-//		cmdoutputArea = new JTextArea(){
-//			/**
-//			 * 看锯齿处理
-//			 */
-//			@Override
-//			public void paint(Graphics g) {
-//				Graphics2D g2 = (Graphics2D) g;
-//				g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-//						RenderingHints.VALUE_ANTIALIAS_ON);
-//				super.paint(g2);
-//			}
-//		};
+		
 		cmdoutputArea.setFont(new Font("Monospaced", Font.BOLD, 12));
 		cmdoutputJScrollPane = new JScrollPane(cmdoutputArea);// set scroll
 		cmdoutputArea.setLineWrap(true);
@@ -1037,9 +1046,25 @@ public class BaiduYunAssistant
 		gbc.weighty = 0.3;
 		leftMainLayout.setConstraints(cmdoutputJScrollPane, gbc);
 	}
+	
+	private void initPwdComponents() {
+		this.pwdLabel = new ALabel("路径");
+		this.pwdTextLabel = new ALabel(this.pwd);
+		
+		leftContainer.add(pwdLabel);
+		leftContainer.add(pwdTextLabel);
+
+		gbc.fill = GridBagConstraints.BOTH;
+		gbc.gridwidth = 1;
+		gbc.weightx = 0;
+		gbc.weighty = 0;
+		leftMainLayout.setConstraints(pwdLabel, gbc);
+		gbc.gridwidth = 0;
+		leftMainLayout.setConstraints(pwdTextLabel, gbc);
+	}
 
 	private void initSearchField() {
-		searchLabel = new ALabel("Search");
+		searchLabel = new ALabel("搜索");
 		searchField = new ATextField();
 		
 		leftContainer.add(searchLabel);
@@ -1058,7 +1083,7 @@ public class BaiduYunAssistant
 	}
 	
 	private void initFileTable() {
-		jl_lb = new ALabel("File List");
+		jl_lb = new ALabel("文件");
 		fileListTable = new ATable(){
 			/*
 			 * 重载isCellEditable方法使得表格元素无法编辑
@@ -1099,7 +1124,7 @@ public class BaiduYunAssistant
 	}
 
 	private void initAccessToken() {
-		tokenTextField_lb = new ALabel("PCS Token");
+		tokenTextField_lb = new ALabel("授权");
 		tokenTextField = new ATextField();
 		String tokenString =  this.checkTokenFile();
 		if (tokenString!=null) {
@@ -1211,17 +1236,17 @@ public class BaiduYunAssistant
 		syncButton.addActionListener(this);
 		leftContainer.add(syncButton);
 		leftMainLayout.setConstraints(syncButton, gbc);
-		//--------search---------
-		searchButton = new AButton("搜索");
-		searchButton.addActionListener(this);
-		leftContainer.add(searchButton);
-		leftMainLayout.setConstraints(searchButton, gbc);
+//		//--------search---------
+//		searchButton = new AButton("搜索");
+//		searchButton.addActionListener(this);
+//		leftContainer.add(searchButton);
+//		leftMainLayout.setConstraints(searchButton, gbc);
 		
 	}
 	
 
 	private void initSpaceBar() {
-		spaceJLabel = new ALabel("space:");
+		spaceJLabel = new ALabel("空间");
 		leftContainer.add(spaceJLabel);
 		gbc.gridwidth = 1;
 		gbc.gridheight = 1;
@@ -1401,7 +1426,7 @@ public class BaiduYunAssistant
 		if (e.getSource().equals(cmdfField)&&cmdfField.getText().equals("")) {
 			cmdfField.setForeground(Color.gray);
 			cmdfField.setFont(new Font("serif",Font.BOLD, 12));
-			cmdfField.setText("input command here");
+			cmdfField.setText("在这里输入bypy命令，或者输入$+shell命令");
 		}
 	}
 }
