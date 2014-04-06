@@ -142,6 +142,7 @@ class LoadingLayer extends LayerUI<JPanel> implements ActionListener {
     }  
   
     public void installUI(JComponent c) {  
+//    	System.out.println("install UI");
         super.installUI(c);  
         JLayer jlayer = (JLayer) c;  
         // 启动鼠标事件和鼠标移动事件  

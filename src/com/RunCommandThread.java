@@ -11,7 +11,7 @@ import javax.swing.JOptionPane;
  * @author jyhong
  *
  */
-public class RunCommandThread implements Runnable {
+public class RunCommandThread extends Thread {//implements Runnable {
 	
 	private BaiduYunAssistant owner = null;
 //	private String command;
@@ -19,6 +19,7 @@ public class RunCommandThread implements Runnable {
 	private boolean refresh = false;
 	private String taskName = null;
 	private int index = -1;
+	private Thread instanceThread;
 //	private int ID = 0;
 	/**
 	 * @param owner
@@ -51,7 +52,9 @@ public class RunCommandThread implements Runnable {
 	public RunCommandThread(BaiduYunAssistant owner,
 			String command,
 			boolean refresh,
-			String taskName) {
+			String taskName) 
+	{
+//		Thread.currentThread();
 		this.refresh = refresh;
 		this.owner = owner;
 		if (command!=null) {
@@ -99,7 +102,7 @@ public class RunCommandThread implements Runnable {
 	 */
 	@Override
 	public void run() {
-//		String names[] = null;
+	//		String names[] = null;
 		if (cmdList!=null) {
 			for (String command:cmdList) {
 				try {
@@ -154,6 +157,22 @@ public class RunCommandThread implements Runnable {
 	public void extTask() {
 		
 	}
+
+	/**
+	 * @return the instanceThread
+	 */
+	public Thread getInstanceThread() {
+		return instanceThread;
+	}
+
+//	/**
+//	 * @param instanceThread the instanceThread to set
+//	 */
+//	public void setInstanceThread(Thread instanceThread) {
+//		this.instanceThread = instanceThread;
+//	}
+	
+//	public void inte
 	
 	/**
 	 * @return the index

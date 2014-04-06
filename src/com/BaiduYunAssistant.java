@@ -16,6 +16,7 @@ import javax.swing.table.DefaultTableModel;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -140,8 +141,9 @@ public class BaiduYunAssistant
 	private ALabel jl_lb;
 	private ATable fileListTable;
 	private JScrollPane jlJScrollPane;
-	private ALabel tokenTextField_lb;
-	private ATextField tokenTextField;
+	private ALabel tokenChekedLabel_lb;
+//	private ATextField tokenTextField;
+	private ALabel tokenChekedLabel;
 	private AButton tokenRefreshButton;
 	private ALabel spaceJLabel;
 	private AProgressBar spaceBar;
@@ -155,6 +157,9 @@ public class BaiduYunAssistant
 	private AButton deleteButton;
 	private AButton syncButton;
 //	private AButton searchButton;
+	
+	private AButton hideTaskTableButton;
+	private boolean hideTaskTbaleFlag;
 	/*---------END:Left Grid Layout-----------*/
 	
 	/*----------Right Grid Layout---------*/
@@ -470,15 +475,19 @@ public class BaiduYunAssistant
 		else if(source.equals(refreshButton))
 		{
         	loadingLayerUI.start(); 
+//        	mainPanel.add()
+//        	this.hideTaskTableButton.setVisible(true);
         	this.setEnabled(false);
-        	mainThread = new Thread(new RunCommandThread(this, "quota", true, null){
+//        	mainPanel.setEnabled(false);
+//        	rightContainer.setEnabled(false);
+        	mainThread = new RunCommandThread(this, "quota", true, null){
         		@Override
         		public void extTask() {
         			BaiduYunAssistant.this.spaceBar.setValue((int)(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000));
         			BaiduYunAssistant.this.spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
     						Math.floor(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000)/10+"%");
         		}
-        	});
+        	};
         	mainThread.start();
 		}
 		else if (source.equals(uploadButton))
@@ -549,6 +558,22 @@ public class BaiduYunAssistant
 				JOptionPane.showMessageDialog(this,
 						"ERROR: when run search");
 			}
+			
+		} else if (source.equals(hideTaskTableButton)) {
+			if (hideTaskTbaleFlag) {//hide
+				hideTaskTableButton.setText("隐藏<");
+//				hideTaskTableButton.setVisible(f);
+				rightContainer.setVisible(true);
+				this.setSize(new Dimension(framewidth,frameheight));
+				hideTaskTbaleFlag = false;
+			} else {//not hide
+				hideTaskTableButton.setText("显示>");
+//				hideTaskTableButton.setVisible(true);
+				rightContainer.setVisible(false);
+				this.setSize(new Dimension(framewidth*2/3,frameheight));
+				hideTaskTbaleFlag = true;
+			}
+
 			
 		}
 		
@@ -1114,16 +1139,16 @@ public class BaiduYunAssistant
 	}
 
 	private void initAccessToken() {
-		tokenTextField_lb = new ALabel("授权");
-		tokenTextField = new ATextField();
+		tokenChekedLabel_lb = new ALabel("授权");
+		tokenChekedLabel = new ALabel();
 		String tokenString =  this.checkTokenFile();
 		if (tokenString!=null) {
 //			tokenTextField.setText(tokenString);
-			tokenTextField.setText("checked");
-			tokenTextField.setEnabled(false);
+			tokenChekedLabel.setText("checked");
+			tokenChekedLabel.setEnabled(false);
 		}
 		// 布局设置
-		leftContainer.add(tokenTextField_lb);
+		leftContainer.add(tokenChekedLabel_lb);
 		gbc.fill = GridBagConstraints.HORIZONTAL;
         //该方法是为了设置如果组件所在的区域比组件本身要大时的显示情况
         //NONE：不调整组件大小。
@@ -1134,13 +1159,13 @@ public class BaiduYunAssistant
 		gbc.gridheight = 1;
 		gbc.weightx = 0;
 		gbc.weighty = 0;
-		leftMainLayout.setConstraints(tokenTextField_lb, gbc);
-		leftContainer.add(tokenTextField);
+		leftMainLayout.setConstraints(tokenChekedLabel_lb, gbc);
+		leftContainer.add(tokenChekedLabel);
 //		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.gridwidth = 6;
 //		gbc.gridheight = 1;
 		gbc.weightx = 1;
-		leftMainLayout.setConstraints(tokenTextField, gbc);
+		leftMainLayout.setConstraints(tokenChekedLabel, gbc);
 		tokenRefreshButton = new AButton("Refresh Token");
 		tokenRefreshButton.addActionListener(this);
 		//------refresh token button--------
@@ -1231,6 +1256,13 @@ public class BaiduYunAssistant
 //		searchButton.addActionListener(this);
 //		leftContainer.add(searchButton);
 //		leftMainLayout.setConstraints(searchButton, gbc);
+		
+		//-------hide------
+		hideTaskTableButton = new AButton("隐藏<");
+		hideTaskTableButton.addActionListener(this);
+		leftContainer.add(hideTaskTableButton);
+		leftMainLayout.setConstraints(hideTaskTableButton, gbc);
+		hideTaskTbaleFlag = false;//false:not hide
 		
 	}
 	
@@ -1335,7 +1367,10 @@ public class BaiduYunAssistant
 		String row[] = {index, rct.getTaskName(), time};
 		this.taskTableModel.addRow(row);
 //		System.out.println("Add task:"+row[0]+row[1]+row[2]);
-		new Thread(rct).start();
+		//REPLACE:rct is changed to a Thread class
+//		new Thread(rct).start();
+		rct.start();
+		
 //		return i;
 	}
 	/**
@@ -1355,6 +1390,13 @@ public class BaiduYunAssistant
 			}
 		}
 		return false;
+	}
+	
+	@SuppressWarnings("deprecation")
+	private void interruptTask(RunCommandThread rct) {
+//		rct.interrupt();
+		JOptionPane.showConfirmDialog(this, "确定终止线程?");
+		rct.stop();
 	}
 	
 	protected int getTaskIndex(RunCommandThread rct) {
