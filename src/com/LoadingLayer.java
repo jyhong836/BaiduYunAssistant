@@ -103,7 +103,7 @@ class LoadingLayer extends LayerUI<JPanel> implements ActionListener {
                 .5f * fade));  
         g2.fillRect(0, 0, w, h);  
   
-        int s = Math.min(w, h) / 10;  
+        int s = Math.min(w, h) / 20;  
         int cx = w / 2;  
         int cy = h / 2;  
         /* 为呈现算法设置单个首选项的值。 
@@ -117,7 +117,7 @@ class LoadingLayer extends LayerUI<JPanel> implements ActionListener {
          *  setStroke:设置呈现过程中要画的图形 
          * BasicStroke 类定义针对图形图元轮廓呈现属性的一个基本集合 
          */  
-        g2.setStroke(new BasicStroke(s / 4, BasicStroke.CAP_ROUND,  
+        g2.setStroke(new BasicStroke(s / 8, BasicStroke.CAP_SQUARE,//CAP_ROUND,  
                 BasicStroke.JOIN_ROUND));  
         //设置绘画颜色  
         g2.setPaint(Color.white);  
@@ -132,7 +132,7 @@ class LoadingLayer extends LayerUI<JPanel> implements ActionListener {
         for (int i = 0; i < 12; i++) {  
             float scale = (11.0f - (float) i) / 11.0f;  
             g2.drawLine(cx + s, cy, cx + s * 2, cy);  
-            g2.rotate(-Math.PI / 6, cx, cy);  
+            g2.rotate(-Math.PI / 10, cx, cy);  
             //通过设置AlphaComposite.getInstance()第二个参数的不同来实现12“针”颜色的不同  
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER,  
                     scale * fade));  
@@ -180,7 +180,7 @@ class LoadingLayer extends LayerUI<JPanel> implements ActionListener {
         if (mIsRunning) {  
             //firePropertyChange():通知的内部状态的更新  
             firePropertyChange("tick", 0, 1);  
-            mAngle += 3;  
+            mAngle += 18;  
             if (mAngle >= 360) {  
                 mAngle = 0;  
             }  

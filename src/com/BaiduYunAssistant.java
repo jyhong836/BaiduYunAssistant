@@ -55,16 +55,31 @@ import com.Antilias.*;
 
 /**
  * 
- * @author jyhong
+ * @author Junyuan Hong(GitHub:jyhong836)
  * @version 1.00
  * created with Eclipse Kepler
  * JRE version:1.7
  * OS: Linux2.6, Ubuntu10.04.3
  * 
  * TODO:还不支持批量选择上传和下载
- * TODO:刷新之后下载/更新云端文件目录到本地
- * TODO：sync，先检查:syncup会自动覆盖云端内容旧的文件，不会上传相同文件
+ * TODO：退出时进行任务检查，当还有任务时进行提示
+ * TODO:刷新之后“提示”下载/更新云端文件目录到本地
+ * TODO：sync，先检查，注：syncup会自动覆盖云端内容旧的文件，不会上传相同文件
  * TODO:如果出故障了，应当有功能按键允许用户重新新建一个JFrame
+ * FIXME:任务管理应该分为上传和下载
+ * TODO：传输管理，模仿百度云管家，将任务分解为单个文件
+ * TODO：传输管理，运行有1000个任务，但是实际在执行的只有最多5个任务，失败任务放在最后重试
+ * TODO：利用Compare命令进行同步任务的进度计算
+ * TODO：刷新之后的动画，是否可以引用到其他地方？
+ * TODO：任务栏的上传和下载采用CardLayout进行切换
+ * TODO：设置对话框，对各个参数进行设置。按应用之后退出对话框
+ * TODO：用状态栏替换命令行输出
+ * TODO：云端回收站的管理
+ * TODO：退出时，如果还有任务，尽可能地？？？？保证下次可以正确地恢复
+ * 
+ * TODO：大文件的传输，断点续传？？？
+ * FIXME；在同步时，如果遇到相同的旧文件，被移除的话是被移到哪里？是否可以恢复。
+ * TODO：多版本备份，旧文件可以恢复
  *
  */
 public class BaiduYunAssistant 
@@ -562,13 +577,11 @@ public class BaiduYunAssistant
 		} else if (source.equals(hideTaskTableButton)) {
 			if (hideTaskTbaleFlag) {//hide
 				hideTaskTableButton.setText("隐藏<");
-//				hideTaskTableButton.setVisible(f);
 				rightContainer.setVisible(true);
 				this.setSize(new Dimension(framewidth,frameheight));
 				hideTaskTbaleFlag = false;
 			} else {//not hide
 				hideTaskTableButton.setText("显示>");
-//				hideTaskTableButton.setVisible(true);
 				rightContainer.setVisible(false);
 				this.setSize(new Dimension(framewidth*2/3,frameheight));
 				hideTaskTbaleFlag = true;
