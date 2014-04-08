@@ -2,9 +2,16 @@ package com;
 
 import java.util.concurrent.ArrayBlockingQueue;
 
+/**
+ * 
+ * @author jyhong
+ * 
+ * @funciton 这是任务管理进程，从taskVector中取任务，添加到执行队列，执行。
+ *
+ */
 public class TaskQueueThread extends Thread {
 	
-	private ArrayBlockingQueue<RunCommandThread> taskQueue;
+	protected ArrayBlockingQueue<RunCommandThread> taskQueue;
 	private BaiduYunAssistant owner;
 	private short maxTaskNum = 5;
 	private boolean stopflag = false;

@@ -481,6 +481,13 @@ public class BaiduYunAssistant
 //			e.printStackTrace();
 		}
 	}
+	
+	private void loadingMainThread(RunCommandThread rct) {
+    	loadingLayerUI.start(); 
+    	this.setEnabled(false);
+    	mainThread = rct;
+    	mainThread.start();
+	}
 
 	@Override
 	public void actionPerformed(ActionEvent e) {
@@ -499,21 +506,14 @@ public class BaiduYunAssistant
 		}
 		else if(source.equals(refreshButton))
 		{
-        	loadingLayerUI.start(); 
-//        	mainPanel.add()
-//        	this.hideTaskTableButton.setVisible(true);
-        	this.setEnabled(false);
-//        	mainPanel.setEnabled(false);
-//        	rightContainer.setEnabled(false);
-        	mainThread = new RunCommandThread(this, "quota", true, null){
-        		@Override
-        		public void extTask() {
-        			BaiduYunAssistant.this.spaceBar.setValue((int)(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000));
-        			BaiduYunAssistant.this.spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
-    						Math.floor(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000)/10+"%");
-        		}
-        	};
-        	mainThread.start();
+			loadingMainThread(new RunCommandThread(this, "quota", true, null){
+	    		@Override
+	    		public void extTask() {
+	    			BaiduYunAssistant.this.spaceBar.setValue((int)(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000));
+	    			BaiduYunAssistant.this.spaceBar.setString(usedSpace+"GB/"+cloudSpace/1024+"TB "+
+							Math.floor(BaiduYunAssistant.this.usedSpace/BaiduYunAssistant.this.cloudSpace*1000)/10+"%");
+	    		}
+	    	});
 		}
 		else if (source.equals(uploadButton))
 		{
@@ -666,20 +666,27 @@ public class BaiduYunAssistant
 	private void actionUploadButton() {
 		
 		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setMultiSelectionEnabled(true);
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		fileChooser.setDialogType(JFileChooser.CUSTOM_DIALOG);
 		fileChooser.setDialogTitle("选择上传文件");
 		int stat = fileChooser.showDialog(this, "上传");
+
+//		int stat = fileChooser.showOpenDialog(this);
 		if (stat==JFileChooser.APPROVE_OPTION) {
-			File selectFile = fileChooser.getSelectedFile();
-			String fileName = selectFile.getAbsolutePath();
-			System.out.println("upload "+fileName+" "+this.pwd+"/"+selectFile.getName());
-			this.addTask(
-					new ShellCommand(
-//					new RunCommandThread(this, 
-					"upload "+fileName+" "+this.pwd+"/"+selectFile.getName(),
-					true,
-					"upload "+selectFile.getName()) );
+//			File selectFile = fileChooser.getSelectedFile();
+			File selectFiles[] = fileChooser.getSelectedFiles();
+			System.out.println(selectFiles.length);
+			for (File selectFile:selectFiles) {
+				String fileName = selectFile.getAbsolutePath();
+				System.out.println("upload "+fileName+" "+this.pwd+"/"+selectFile.getName());
+				this.addTask(
+						new ShellCommand(
+	//					new RunCommandThread(this, 
+						"upload "+fileName+" "+this.pwd+"/"+selectFile.getName(),
+						true,
+						"upload "+selectFile.getName()) );
+			}
 		}
 	}
 
@@ -1349,6 +1356,7 @@ public class BaiduYunAssistant
 		
 		taskTableModel = (DefaultTableModel)taskTable.getModel();
 		taskTableModel.addColumn("Hashcode");
+		taskTableModel.addColumn("Stat");
 		taskTableModel.addColumn("Name");
 		taskTableModel.addColumn("startTime");
 
@@ -1404,7 +1412,7 @@ public class BaiduYunAssistant
 		java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		java.util.Date d=new java.util.Date();
 		String time = df.format(d);
-		String row[] = {index, sc.getTaskName(), time};
+		String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
 		this.taskTableModel.addRow(row);
 		synchronized (taskVector) {
 			if (oldsize<1)
@@ -1416,20 +1424,16 @@ public class BaiduYunAssistant
 //		return i;
 	}
 	protected void refreshTaskTable() {
-		int oldsize = taskVector.size();
-		for (ShellCommand sc:this.taskVector) {
-//			this.taskVector.add(sc);
-	//		int i = taskTableModel.getRowCount();//taskVector.indexOf(rct);
-	//		rct.setIndex(i);
-			String index = String.valueOf(sc.hashCode());
-	//		String timeString = System;
-			java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-			java.util.Date d=new java.util.Date();
-			String time = df.format(d);
-			String row[] = {index, sc.getTaskName(), time};
-			this.taskTableModel.addRow(row);
-		}
 		synchronized (taskVector) {
+			int oldsize = taskVector.size();
+			for (ShellCommand sc:this.taskVector) {
+				String index = String.valueOf(sc.hashCode());
+				java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				java.util.Date d=new java.util.Date();
+				String time = df.format(d);
+				String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
+				this.taskTableModel.addRow(row);
+			}
 			if (oldsize<1)
 				taskVector.notifyAll();//提醒所有在等待waitTask的线程
 		}
@@ -1524,7 +1528,11 @@ public class BaiduYunAssistant
 				if (this.tableModel.getValueAt(row, 0).equals("D")) {
 					try {
 						this.runCommand("cd "+this.tableModel.getValueAt(row, 1));
-						this.ListFile(null);
+//						this.ListFile(null);
+						loadingMainThread(new RunCommandThread(this,
+								"",
+								true,
+								null));
 					} catch (IOException e1) {
 						e1.printStackTrace();
 					}
