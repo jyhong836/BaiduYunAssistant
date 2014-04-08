@@ -15,6 +15,8 @@ import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.Vector;
 
+
+import javax.swing.JCheckBox;
 //import javax.swing.AButton;
 import javax.swing.JDialog;
 import javax.swing.JFileChooser;
@@ -51,6 +53,8 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	
 	private AButton applyButton;
 	
+	private ACheckBox noTaskFinishTip;
+	
 	private Container container;
 	private JScrollPane tableJScrollPane;
 	private GridBagLayout mainLayout;
@@ -82,6 +86,12 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		
 		//---------init argument field----
 		initArgumentField();
+		
+		//-------init noTaskFinishTip-----------
+		noTaskFinishTip = new ACheckBox("下载完成后不提醒", false);
+		noTaskFinishTip.addActionListener(this);
+		container.add(noTaskFinishTip);
+		mainLayout.setConstraints(noTaskFinishTip, gbc);
 		
 		//--------init applyButton-----
 		initApplyButton();
@@ -207,6 +217,8 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 			this.refreshSyncFileTable();
 		} else if(source.equals(applyButton)) {
 			owner.bypyArgument = this.argumentField.getText()+" ";//防止最好少一个空格
+		} else if(source.equals(noTaskFinishTip)) {
+			owner.setNoTaskFinishTip(noTaskFinishTip.isSelected());
 		}
 		
 	}

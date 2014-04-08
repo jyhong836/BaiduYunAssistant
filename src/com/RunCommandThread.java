@@ -139,7 +139,7 @@ public class RunCommandThread extends Thread {
 		 * NOTE:the ID may not be correct, you'd better set the taskName
 		 */
 //		int ID = this.owner.getTaskIndex(this);
-		if (this.taskName!=null) {
+		if (!owner.getNoTaskFinishTip()&&this.taskName!=null) {
 			JOptionPane.showMessageDialog(owner, 
 					this.taskName
 					+" , complete");

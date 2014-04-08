@@ -193,6 +193,7 @@ public class BaiduYunAssistant
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
+	private boolean noTaskFinishTip;
 	protected Vector<ShellCommand> taskVector;
 	protected TaskQueueThread taskQueueThread;
 	//-----------------------
@@ -1575,6 +1576,20 @@ public class BaiduYunAssistant
 			cmdfField.setFont(new Font("serif",Font.BOLD, 12));
 			cmdfField.setText("在这里输入bypy命令，或者输入$+shell命令");
 		}
+	}
+
+	/**
+	 * @return the noTaskFinishTip
+	 */
+	public boolean getNoTaskFinishTip() {
+		return noTaskFinishTip;
+	}
+
+	/**
+	 * @param noTaskFinishTip the noTaskFinishTip to set
+	 */
+	public void setNoTaskFinishTip(boolean noTaskFinishTip) {
+		this.noTaskFinishTip = noTaskFinishTip;
 	}
 }
 
