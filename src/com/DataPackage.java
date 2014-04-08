@@ -26,7 +26,7 @@ public class DataPackage implements Serializable{
 	protected String pwd; // currunt pwd
 	protected double cloudSpace = 0;
 	protected double usedSpace = 0;
-	protected Vector<ShellCommand> taskVector;
+	protected Vector<ShellCommand> waitTaskVector;
 	protected Vector<String> syncFiles;
 	protected Vector<String> remoteSyncFiles;
 	protected String bypyArgument = "bypy ";// argument shoud be add after this

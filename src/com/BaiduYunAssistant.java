@@ -194,7 +194,7 @@ public class BaiduYunAssistant
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
 	private boolean noTaskFinishTip;
-	protected Vector<ShellCommand> taskVector;
+	protected Vector<ShellCommand> waitTaskVector;
 	protected TaskQueueThread taskQueueThread;
 	//-----------------------
 	protected Vector<String> syncFiles;
@@ -239,7 +239,7 @@ public class BaiduYunAssistant
 			this.pwd = datapackage.pwd;
 			this.cloudSpace = datapackage.cloudSpace;
 			this.usedSpace = datapackage.usedSpace;
-			this.taskVector = datapackage.taskVector;
+			this.waitTaskVector = datapackage.waitTaskVector;
 //			this.taskQueueThread = datapackage.taskQueueThread;
 			this.fileTree = datapackage.fileTree;
 			this.syncFiles = datapackage.syncFiles;
@@ -250,7 +250,7 @@ public class BaiduYunAssistant
 			//-----no data, then init new parameters-------
 			syncFiles = new Vector<String>();
 			remoteSyncFiles = new Vector<String>();
-			taskVector = new Vector<ShellCommand>();
+			waitTaskVector = new Vector<ShellCommand>();
 		}
 		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
@@ -979,7 +979,7 @@ public class BaiduYunAssistant
 			datapackage.pwd = this.pwd;
 			datapackage.cloudSpace = this.cloudSpace;
 			datapackage.usedSpace = this.usedSpace;
-			datapackage.taskVector = this.taskVector;
+			datapackage.waitTaskVector = this.waitTaskVector;
 			datapackage.fileTree = this.fileTree;
 			datapackage.syncFiles = this.syncFiles;
 			datapackage.remoteSyncFiles = this.remoteSyncFiles;
@@ -1403,9 +1403,9 @@ public class BaiduYunAssistant
 //			return true;
 //		}
 //		this.taskTableModel.addRow(row);
-		int oldsize = taskVector.size();
-		this.taskVector.add(sc);
-//		int i = taskTableModel.getRowCount();//taskVector.indexOf(rct);
+		int oldsize = waitTaskVector.size();
+		this.waitTaskVector.add(sc);
+//		int i = taskTableModel.getRowCount();//waitTaskVector.indexOf(rct);
 //		rct.setIndex(i);
 		String index = String.valueOf(sc.hashCode());
 //		String timeString = System;
@@ -1414,9 +1414,9 @@ public class BaiduYunAssistant
 		String time = df.format(d);
 		String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
 		this.taskTableModel.addRow(row);
-		synchronized (taskVector) {
+		synchronized (waitTaskVector) {
 			if (oldsize<1)
-				taskVector.notifyAll();//提醒所有在等待waitTask的线程
+				waitTaskVector.notifyAll();//提醒所有在等待waitTask的线程
 		}
 //		System.out.println("Add task:"+row[0]+row[1]+row[2]);
 		//REPLACE:rct is changed to a Thread class
@@ -1424,9 +1424,9 @@ public class BaiduYunAssistant
 //		return i;
 	}
 	protected void refreshTaskTable() {
-		synchronized (taskVector) {
-			int oldsize = taskVector.size();
-			for (ShellCommand sc:this.taskVector) {
+		synchronized (waitTaskVector) {
+			int oldsize = waitTaskVector.size();
+			for (ShellCommand sc:this.waitTaskVector) {
 				String index = String.valueOf(sc.hashCode());
 				java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				java.util.Date d=new java.util.Date();
@@ -1435,19 +1435,19 @@ public class BaiduYunAssistant
 				this.taskTableModel.addRow(row);
 			}
 			if (oldsize<1)
-				taskVector.notifyAll();//提醒所有在等待waitTask的线程
+				waitTaskVector.notifyAll();//提醒所有在等待waitTask的线程
 		}
 	}
 	/**
-	 * @param sc remove task from the taskVector,but will not kill it
+	 * @param sc remove task from the waitTaskVector,but will not kill it
 	 * @return
 	 */
 	private boolean removeTask(ShellCommand sc) {
-		if (this.taskVector.remove(sc)) {
-			System.out.println("ERROR:which should not have happened:remove finished task in taskVector:"+sc);
+		if (this.waitTaskVector.remove(sc)) {
+			System.out.println("ERROR:which should not have happened:remove finished task in waitTaskVector:"+sc);
 		} 
 //		else {
-//			System.out.println("task is not in taskVector:"+sc);
+//			System.out.println("task is not in waitTaskVector:"+sc);
 //		}
 //		this.taskTableModel.removeRow(rct.getIndex());
 		int count = taskTableModel.getRowCount();
@@ -1467,30 +1467,30 @@ public class BaiduYunAssistant
 	
 	synchronized protected ShellCommand getWaitTask() throws InterruptedException {
 		ShellCommand sc;
-		synchronized(this.taskVector) {
-			while (this.taskVector.isEmpty())
-				this.taskVector.wait();
-			sc = this.taskVector.elementAt(0);// owner.getWaitTask();
+		synchronized(this.waitTaskVector) {
+			while (this.waitTaskVector.isEmpty())
+				this.waitTaskVector.wait();
+			sc = this.waitTaskVector.elementAt(0);// owner.getWaitTask();
 		}
 		return sc;
 	}
 	
 	protected void removeWaitTask(RunCommandThread rct) {
-		synchronized(taskVector) {
-			this.taskVector.remove(rct.getShellCommand());
+		synchronized(waitTaskVector) {
+			this.waitTaskVector.remove(rct.getShellCommand());
 		}
 	}
 	
 	protected void addWaitTask(int index, RunCommandThread rct) {
-		synchronized(taskVector) {
+		synchronized(waitTaskVector) {
 //			ShellCommand sc = new ShellCommand(rct.getC, refresh, name)
-			this.taskVector.add(rct.getShellCommand());
+			this.waitTaskVector.add(rct.getShellCommand());
 		}
 	}
 	
 	protected void addWaitTask(int index, ShellCommand sc) {
-		synchronized(taskVector) {
-			this.taskVector.add(index, sc);
+		synchronized(waitTaskVector) {
+			this.waitTaskVector.add(index, sc);
 		}
 	}
 	
@@ -1502,11 +1502,11 @@ public class BaiduYunAssistant
 	}
 	
 //	protected int getTaskIndex(RunCommandThread rct) {
-//		return this.taskVector.indexOf(rct);
+//		return this.waitTaskVector.indexOf(rct);
 //	}
 	
 	synchronized protected void taskComplete(RunCommandThread rct) {
-		if (taskQueueThread.removeFinishedTask(rct)) {//taskVector.indexOf(rct)!=-1) {
+		if (taskQueueThread.removeFinishedTask(rct)) {//waitTaskVector.indexOf(rct)!=-1) {
 			System.out.println("remove from BlockingQueue success");
 			this.removeTask(rct);
 			//FIXME:

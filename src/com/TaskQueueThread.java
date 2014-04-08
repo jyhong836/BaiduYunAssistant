@@ -31,14 +31,14 @@ public class TaskQueueThread extends Thread {
 			try {
 				RunCommandThread rct;
 				ShellCommand sc;
-				synchronized(owner.taskVector) {
-					while (owner.taskVector.isEmpty())
-						owner.taskVector.wait();
-					sc = owner.taskVector.elementAt(0);// owner.getWaitTask();
+				synchronized(owner.waitTaskVector) {
+					while (owner.waitTaskVector.isEmpty())
+						owner.waitTaskVector.wait();
+					sc = owner.waitTaskVector.elementAt(0);// owner.getWaitTask();
 				}
 				rct = new RunCommandThread(owner, sc);
 //				RunCommandThread rct = owner.getWaitTask();
-//				RunCommandThread rct = owner.taskVector.elementAt(0);
+//				RunCommandThread rct = owner.waitTaskVector.elementAt(0);
 				this.taskQueue.put(rct);
 				this.owner.removeWaitTask(rct);
 				rct.start();
@@ -61,7 +61,7 @@ public class TaskQueueThread extends Thread {
 //					
 //					this.taskQueue.put(rct);
 //					rct.start();
-////					owner.taskVector.remove(0);
+////					owner.waitTaskVector.remove(0);
 //				}
 //			} catch (InterruptedException e) {
 //				/* 阻塞过程中发生中断:
@@ -96,7 +96,7 @@ public class TaskQueueThread extends Thread {
 		while((rct = this.taskQueue.poll())!=null) {
 			this.owner.addWaitTask(0, rct);
 			rct.stop();//TODO:以后会考虑更好的处理方法
-//			owner.taskVector.add(0, rct);
+//			owner.waitTaskVector.add(0, rct);
 		}
 //		this.notify();//TODO:TEST
 	}
