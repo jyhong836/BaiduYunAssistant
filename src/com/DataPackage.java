@@ -5,6 +5,7 @@ package com;
 
 import java.io.Serializable;
 import java.util.Vector;
+import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.swing.JTree;
 
@@ -25,7 +26,7 @@ public class DataPackage implements Serializable{
 	protected String pwd; // currunt pwd
 	protected double cloudSpace = 0;
 	protected double usedSpace = 0;
-	protected Vector<RunCommandThread> taskVector;
+	protected Vector<ShellCommand> taskVector;
 	protected Vector<String> syncFiles;
 	protected Vector<String> remoteSyncFiles;
 	protected String bypyArgument = "bypy ";// argument shoud be add after this

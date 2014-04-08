@@ -4,6 +4,7 @@
 package com;
 
 import java.io.IOException;
+import java.io.Serializable;
 
 import javax.swing.JOptionPane;
 
@@ -11,11 +12,13 @@ import javax.swing.JOptionPane;
  * @author jyhong
  *
  */
-public class RunCommandThread extends Thread {//implements Runnable {
+public class RunCommandThread extends Thread {
+//implements Runnable {
 	
+	private ShellCommand sc = null;
 	private BaiduYunAssistant owner = null;
 //	private String command;
-	private String cmdList[] = null;
+	private String command = null;
 	private boolean refresh = false;
 	private String taskName = null;
 	private int index = -1;
@@ -28,8 +31,8 @@ public class RunCommandThread extends Thread {//implements Runnable {
 //	private RunCommandThread(BaiduYunAssistant owner, String command) {
 //		this.owner = owner;
 //		if (command!=null) {
-//			this.cmdList = new String[1];
-//			this.cmdList[0] = command;
+//			this.command = new String[1];
+//			this.command[0] = command;
 //		}
 //	}
 	/**
@@ -38,15 +41,15 @@ public class RunCommandThread extends Thread {//implements Runnable {
 	 */
 //	private RunCommandThread(BaiduYunAssistant owner, String command[]) {
 //		this.owner = owner;
-//		this.cmdList = command;
+//		this.command = command;
 //	}
 	
 //	private RunCommandThread(BaiduYunAssistant owner, String command, boolean refresh) {
 //		this.refresh = refresh;
 //		this.owner = owner;
 //		if (command!=null) {
-//			this.cmdList = new String[1];
-//			this.cmdList[0] = command;
+//			this.command = new String[1];
+//			this.command[0] = command;
 //		}
 //	}
 	public RunCommandThread(BaiduYunAssistant owner,
@@ -58,8 +61,7 @@ public class RunCommandThread extends Thread {//implements Runnable {
 		this.refresh = refresh;
 		this.owner = owner;
 		if (command!=null) {
-			this.cmdList = new String[1];
-			this.cmdList[0] = command;
+			this.command = command;
 		}
 		this.taskName = taskName;
 	}
@@ -68,6 +70,19 @@ public class RunCommandThread extends Thread {//implements Runnable {
 //		this.setTaskName(taskName);
 //		this.ID = ID;
 //	}
+
+	public RunCommandThread(BaiduYunAssistant owner, ShellCommand sc) {
+		this.sc = sc;
+		this.refresh = sc.refresh;
+		this.owner = owner;
+		if (sc.command!=null) {
+//			this.command = new String[1];
+			this.command = sc.command;
+		} else {
+			throw new NullPointerException();
+		}
+		this.taskName = sc.name;
+	}
 
 	/**
 	 * @return the taskName
@@ -81,6 +96,10 @@ public class RunCommandThread extends Thread {//implements Runnable {
 	 */
 	public void setTaskName(String taskName) {
 		this.taskName = taskName;
+	}
+	
+	public ShellCommand getShellCommand() {
+		return sc;
 	}
 //
 //	/**
@@ -103,8 +122,8 @@ public class RunCommandThread extends Thread {//implements Runnable {
 	@Override
 	public void run() {
 	//		String names[] = null;
-		if (cmdList!=null) {
-			for (String command:cmdList) {
+		if (command!=null) {
+//			for (String command:command) {
 				try {
 					this.owner.runCommand(command);
 				} catch (IOException e) {
@@ -114,25 +133,26 @@ public class RunCommandThread extends Thread {//implements Runnable {
 					return;
 				}
 //				names = command.split("/");
-			}
+//			}
 		}
 		/**
 		 * NOTE:the ID may not be correct, you'd better set the taskName
 		 */
-		int ID = this.owner.getTaskIndex(this);
+//		int ID = this.owner.getTaskIndex(this);
 		if (this.taskName!=null) {
 			JOptionPane.showMessageDialog(owner, 
 					this.taskName
 					+" , complete");
-		} else if (ID!=-1) {
-			JOptionPane.showMessageDialog(owner, 
-					"Task "+ID+"("
-					+this.hashCode()
-					+") , complete");
 		} 
+//		else if (ID!=-1) {
+//			JOptionPane.showMessageDialog(owner, 
+//					"Task "+ID+"("
+//					+this.hashCode()
+//					+") , complete");
+//		} 
 //		else {
 //			JOptionPane.showMessageDialog(owner, 
-//					cmdList[0]
+//					command[0]
 //					+" , complete");
 //		}
 		try {
@@ -167,7 +187,7 @@ public class RunCommandThread extends Thread {//implements Runnable {
 	
 	@Override
 	public String toString() {
-		return this.getName();
+		return this.getTaskName();
 	}
 
 //	/**

@@ -52,6 +52,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
 
 import com.Antilias.*;
+import com.sun.rowset.internal.Row;
 
 /**
  * 
@@ -192,7 +193,7 @@ public class BaiduYunAssistant
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
-	protected Vector<RunCommandThread> taskVector;
+	protected Vector<ShellCommand> taskVector;
 	protected TaskQueueThread taskQueueThread;
 	//-----------------------
 	protected Vector<String> syncFiles;
@@ -248,17 +249,14 @@ public class BaiduYunAssistant
 			//-----no data, then init new parameters-------
 			syncFiles = new Vector<String>();
 			remoteSyncFiles = new Vector<String>();
-			taskVector = new Vector<RunCommandThread>();
+			taskVector = new Vector<ShellCommand>();
 		}
-		// 启动任务队列管理
-		taskQueueThread = new TaskQueueThread(this);
-		taskQueueThread.start();
 		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
 				framewidth,
 				frameheight);
-		this.setTitle("Baidu Yun Assistant");
+		this.setTitle("百度云助手 Baidu Yun Assistant");
 		Image BaiduYunIcon = Toolkit.getDefaultToolkit().getImage("data/BaiduYun.png");;
 		this.setIconImage(BaiduYunIcon);
 		//--------------END:init JFrame------------------
@@ -351,6 +349,12 @@ public class BaiduYunAssistant
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
+		
+
+		//------------启动任务队列管理------------
+		refreshTaskTable();
+		taskQueueThread = new TaskQueueThread(this);
+		taskQueueThread.start();
 		
 		//-----------Frame settings--------------
 		this.addWindowListener(this);
@@ -602,13 +606,15 @@ public class BaiduYunAssistant
 		if (size>0 && remoteSyncFiles.size()==size) {
 			int i = 0;
 			for (i = 0; i < size; i++) {
-				this.addTask(new RunCommandThread(this,
+				this.addTask(new ShellCommand(
+//						new RunCommandThread(this,
 						"syncup "
 						+syncFiles.elementAt(i)
 						+" "
 						+remoteSyncFiles.elementAt(i),
 						true,
-						"syncup")
+						"syncup"
+						)
 				);
 			}
 		}
@@ -667,7 +673,9 @@ public class BaiduYunAssistant
 			File selectFile = fileChooser.getSelectedFile();
 			String fileName = selectFile.getAbsolutePath();
 			System.out.println("upload "+fileName+" "+this.pwd+"/"+selectFile.getName());
-			this.addTask(new RunCommandThread(this, 
+			this.addTask(
+					new ShellCommand(
+//					new RunCommandThread(this, 
 					"upload "+fileName+" "+this.pwd+"/"+selectFile.getName(),
 					true,
 					"upload "+selectFile.getName()) );
@@ -677,13 +685,12 @@ public class BaiduYunAssistant
 
 
 	private void actionDownloadButton() {
-		int row = fileListTable.getSelectedRow();
-		if (row==-1) {
+		int rows[] = fileListTable.getSelectedRows();
+		int count = rows.length;
+		if (count<=0) {
 			JOptionPane.showMessageDialog(this, "请选择一个文件或目录");
 			return;
 		}
-		String type = (String)this.tableModel.getValueAt(row, 0);
-		String fileName = (String)this.tableModel.getValueAt(row, 1);
 		
 		JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
@@ -694,22 +701,32 @@ public class BaiduYunAssistant
 			File selectFile = fileChooser.getSelectedFile();
 
 			String localDirName = selectFile.getAbsolutePath();
-			if (type.equals("D")) {
-				System.out.println("downdir "+this.pwd+"/"+fileName
-						+" "+localDirName+"/"+fileName);
-				this.addTask(new RunCommandThread(this, 
-						"downdir "+this.pwd+"/"+fileName
-						+" "+localDirName+"/"+fileName,
-						true,
-						"download dir:"+fileName) );
-			} else if (type.equals("F")) {
-				System.out.println("downfile "+this.pwd+"/"+fileName
-						+" "+localDirName+"/"+fileName);
-				this.addTask(new RunCommandThread(this, 
-						"downfile "+this.pwd+"/"+fileName
-						+" "+localDirName+"/"+fileName,
-						true,
-						"download file:"+fileName) );
+			
+
+			for (int row:rows) {
+				String type = (String)this.tableModel.getValueAt(row, 0);
+				String fileName = (String)this.tableModel.getValueAt(row, 1);
+				if (type.equals("D")) {
+					System.out.println("downdir "+this.pwd+"/"+fileName
+							+" "+localDirName+"/"+fileName);
+					this.addTask(
+							new ShellCommand(
+//							new RunCommandThread(this, 
+							"downdir "+this.pwd+"/"+fileName
+							+" "+localDirName+"/"+fileName,
+							true,
+							"download dir:"+fileName) );
+				} else if (type.equals("F")) {
+					System.out.println("downfile "+this.pwd+"/"+fileName
+							+" "+localDirName+"/"+fileName);
+					this.addTask(
+							new ShellCommand(
+//							new RunCommandThread(this, 
+							"downfile "+this.pwd+"/"+fileName
+							+" "+localDirName+"/"+fileName,
+							true,
+							"download file:"+fileName) );
+				}
 			}
 		}
 	}
@@ -933,6 +950,10 @@ public class BaiduYunAssistant
 		ObjectOutputStream oos = null;
 		File dataFile = new File(dataFolderString+"BYA.dat");
 		try {
+			//---------回收线程----------
+			this.taskQueueThread.killRunningTask();
+			
+			
 			if (!dataFile.exists()) {
 				File dirFile = new File(dataFolderString);
 				if (!dirFile.exists())
@@ -1362,10 +1383,9 @@ public class BaiduYunAssistant
 		spaceBar.setStringPainted(true);
 	}
 	/**
-	 * @param rct the task to be run
-	 * @return the index of task
+	 * @param sc the task to be run
 	 */
-	protected void addTask(RunCommandThread rct) {
+	private void addTask(ShellCommand sc) {
 //		/**
 //		 * @param rct add and run RunCommandThread
 //		 * @return
@@ -1374,38 +1394,61 @@ public class BaiduYunAssistant
 //			return true;
 //		}
 //		this.taskTableModel.addRow(row);
-		this.taskVector.add(rct);
+		int oldsize = taskVector.size();
+		this.taskVector.add(sc);
 //		int i = taskTableModel.getRowCount();//taskVector.indexOf(rct);
 //		rct.setIndex(i);
-		String index = String.valueOf(rct.hashCode());
+		String index = String.valueOf(sc.hashCode());
 //		String timeString = System;
 		java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 		java.util.Date d=new java.util.Date();
 		String time = df.format(d);
-		String row[] = {index, rct.getTaskName(), time};
+		String row[] = {index, sc.getTaskName(), time};
 		this.taskTableModel.addRow(row);
+		synchronized (taskVector) {
+			if (oldsize<1)
+				taskVector.notifyAll();//提醒所有在等待waitTask的线程
+		}
 //		System.out.println("Add task:"+row[0]+row[1]+row[2]);
 		//REPLACE:rct is changed to a Thread class
-//		new Thread(rct).start();
-		rct.start();
 		
 //		return i;
 	}
+	protected void refreshTaskTable() {
+		int oldsize = taskVector.size();
+		for (ShellCommand sc:this.taskVector) {
+//			this.taskVector.add(sc);
+	//		int i = taskTableModel.getRowCount();//taskVector.indexOf(rct);
+	//		rct.setIndex(i);
+			String index = String.valueOf(sc.hashCode());
+	//		String timeString = System;
+			java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			java.util.Date d=new java.util.Date();
+			String time = df.format(d);
+			String row[] = {index, sc.getTaskName(), time};
+			this.taskTableModel.addRow(row);
+		}
+		synchronized (taskVector) {
+			if (oldsize<1)
+				taskVector.notifyAll();//提醒所有在等待waitTask的线程
+		}
+	}
 	/**
-	 * @param rct remove RunCommandThread from the taskVector,but will not kill it
+	 * @param sc remove task from the taskVector,but will not kill it
 	 * @return
 	 */
-	private boolean removeTask(RunCommandThread rct) {
-		if (this.taskVector.remove(rct)) {
-			System.out.println("remove task:"+rct);
-		} else {
-			System.out.println("task not exist:"+rct);
-		}
+	private boolean removeTask(ShellCommand sc) {
+		if (this.taskVector.remove(sc)) {
+			System.out.println("ERROR:which should not have happened:remove finished task in taskVector:"+sc);
+		} 
+//		else {
+//			System.out.println("task is not in taskVector:"+sc);
+//		}
 //		this.taskTableModel.removeRow(rct.getIndex());
 		int count = taskTableModel.getRowCount();
 		for (int i = 0; i < count; i++) {
 			if (Integer.valueOf((String)this.taskTableModel.getValueAt(i, 0)).equals(
-					Integer.valueOf(rct.hashCode())))
+					Integer.valueOf(sc.hashCode())))
 			{
 				this.taskTableModel.removeRow(i);
 				return true;
@@ -1413,20 +1456,53 @@ public class BaiduYunAssistant
 		}
 		return false;
 	}
+	private boolean removeTask(RunCommandThread rct) {
+		return this.removeTask(rct.getShellCommand());
+	}
+	
+	synchronized protected ShellCommand getWaitTask() throws InterruptedException {
+		ShellCommand sc;
+		synchronized(this.taskVector) {
+			while (this.taskVector.isEmpty())
+				this.taskVector.wait();
+			sc = this.taskVector.elementAt(0);// owner.getWaitTask();
+		}
+		return sc;
+	}
+	
+	protected void removeWaitTask(RunCommandThread rct) {
+		synchronized(taskVector) {
+			this.taskVector.remove(rct.getShellCommand());
+		}
+	}
+	
+	protected void addWaitTask(int index, RunCommandThread rct) {
+		synchronized(taskVector) {
+//			ShellCommand sc = new ShellCommand(rct.getC, refresh, name)
+			this.taskVector.add(rct.getShellCommand());
+		}
+	}
+	
+	protected void addWaitTask(int index, ShellCommand sc) {
+		synchronized(taskVector) {
+			this.taskVector.add(index, sc);
+		}
+	}
 	
 	@SuppressWarnings("deprecation")
 	private void interruptTask(RunCommandThread rct) {
 //		rct.interrupt();
-		JOptionPane.showConfirmDialog(this, "确定终止线程?");
+		JOptionPane.showConfirmDialog(this, "确定终止线程: "+rct+" ?");
 		rct.stop();
 	}
 	
-	protected int getTaskIndex(RunCommandThread rct) {
-		return this.taskVector.indexOf(rct);
-	}
+//	protected int getTaskIndex(RunCommandThread rct) {
+//		return this.taskVector.indexOf(rct);
+//	}
 	
-	protected void taskComplete(RunCommandThread rct) {
+	synchronized protected void taskComplete(RunCommandThread rct) {
 		if (taskQueueThread.removeFinishedTask(rct)) {//taskVector.indexOf(rct)!=-1) {
+			System.out.println("remove from BlockingQueue success");
 			this.removeTask(rct);
 			//FIXME:
 			return;
