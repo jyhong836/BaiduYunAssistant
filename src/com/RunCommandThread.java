@@ -164,6 +164,11 @@ public class RunCommandThread extends Thread {//implements Runnable {
 	public Thread getInstanceThread() {
 		return instanceThread;
 	}
+	
+	@Override
+	public String toString() {
+		return this.getName();
+	}
 
 //	/**
 //	 * @param instanceThread the instanceThread to set

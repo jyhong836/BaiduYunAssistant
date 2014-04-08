@@ -79,7 +79,7 @@ import com.Antilias.*;
  * 
  * TODO：大文件的传输，断点续传？？？
  * FIXME；在同步时，如果遇到相同的旧文件，被移除的话是被移到哪里？是否可以恢复。
- * TODO：多版本备份，旧文件可以恢复
+ * FIXME：多版本备份，旧文件可以恢复
  *
  */
 public class BaiduYunAssistant 
@@ -192,7 +192,8 @@ public class BaiduYunAssistant
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
-	private Vector<RunCommandThread> taskVector;
+	protected Vector<RunCommandThread> taskVector;
+	protected TaskQueueThread taskQueueThread;
 	//-----------------------
 	protected Vector<String> syncFiles;
 	protected Vector<String> remoteSyncFiles;
@@ -237,6 +238,7 @@ public class BaiduYunAssistant
 			this.cloudSpace = datapackage.cloudSpace;
 			this.usedSpace = datapackage.usedSpace;
 			this.taskVector = datapackage.taskVector;
+//			this.taskQueueThread = datapackage.taskQueueThread;
 			this.fileTree = datapackage.fileTree;
 			this.syncFiles = datapackage.syncFiles;
 			this.remoteSyncFiles = datapackage.remoteSyncFiles;
@@ -248,6 +250,9 @@ public class BaiduYunAssistant
 			remoteSyncFiles = new Vector<String>();
 			taskVector = new Vector<RunCommandThread>();
 		}
+		// 启动任务队列管理
+		taskQueueThread = new TaskQueueThread(this);
+		taskQueueThread.start();
 		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
 				(int)screenSize.getHeight()/2 - frameheight/2,
@@ -1391,7 +1396,11 @@ public class BaiduYunAssistant
 	 * @return
 	 */
 	private boolean removeTask(RunCommandThread rct) {
-		this.taskVector.remove(rct);
+		if (this.taskVector.remove(rct)) {
+			System.out.println("remove task:"+rct);
+		} else {
+			System.out.println("task not exist:"+rct);
+		}
 //		this.taskTableModel.removeRow(rct.getIndex());
 		int count = taskTableModel.getRowCount();
 		for (int i = 0; i < count; i++) {
@@ -1417,8 +1426,9 @@ public class BaiduYunAssistant
 	}
 	
 	protected void taskComplete(RunCommandThread rct) {
-		if (taskVector.indexOf(rct)!=-1) {
+		if (taskQueueThread.removeFinishedTask(rct)) {//taskVector.indexOf(rct)!=-1) {
 			this.removeTask(rct);
+			//FIXME:
 			return;
 		} else { // mainThread is to be completed
 			this.loadingLayerUI.stop();
