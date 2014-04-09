@@ -31,6 +31,8 @@ public class DataPackage implements Serializable{
 	protected Vector<String> remoteSyncFiles;
 	protected String bypyArgument = "bypy ";// argument shoud be add after this
 
+	protected Vector<ShellCommand> taskVector;
+
 	/**
 	 * 
 	 */

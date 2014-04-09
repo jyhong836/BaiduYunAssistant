@@ -14,9 +14,9 @@ Copyright 2014 JunyuanHong (https://github.com/jyhong836/BaiduYunAssistant)
 LINSENCE:under GPL v3
 
 百度云ubuntu GUI客户端，基于https://github.com/houtianze/bypy 的python命令行工具，需要将bypy.py添加到/usr/bin/bypy，你可以使用：
-‘’‘’
+````
 $ ln -s <bypy.py> /usr/bin/bypy
-‘’‘’
+````
 来添加bypy
 
 ----
@@ -26,9 +26,11 @@ $ ln -s <bypy.py> /usr/bin/bypy
 ----
 
 BaiduYunAssistant脚本，需要修改里面的jre路径，改为java或者是自己的jre路径。
-'''''
+
+````
 $sudo chmod a+x BadiduYunAssistant #然后就可以运行BadiduYunAssistant了
-'''''
+````
+
 help文件为bypy命令的帮助
 
 BYA.dat保存的了一些用户的设置，上一次关闭时的路径，任务等。如果发现无法启动，则尝试删除BYA.dat之后运行。

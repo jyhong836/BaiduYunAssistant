@@ -42,6 +42,8 @@ public class TaskQueueThread extends Thread {
 				this.taskQueue.put(rct);
 				this.owner.removeWaitTask(rct);
 				rct.start();
+				sc.setStat(ShellCommand.STAT_RUN);
+				owner.refreshTaskTable(true);
 				System.out.println("start task:"+rct+sc.command);
 			} catch (InterruptedException e) {
 				System.out.println("TaskQueueThread is interrupted");

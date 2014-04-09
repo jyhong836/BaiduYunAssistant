@@ -5,7 +5,9 @@ import javax.imageio.ImageIO;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLayer;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
@@ -62,7 +64,7 @@ import com.sun.rowset.internal.Row;
  * JRE version:1.7
  * OS: Linux2.6, Ubuntu10.04.3
  * 
- * TODO:还不支持批量选择上传和下载
+ * FTODO:还不支持批量选择上传和下载
  * TODO：退出时进行任务检查，当还有任务时进行提示
  * TODO:刷新之后“提示”下载/更新云端文件目录到本地
  * TODO：sync，先检查，注：syncup会自动覆盖云端内容旧的文件，不会上传相同文件
@@ -157,6 +159,7 @@ public class BaiduYunAssistant
 	private ALabel jl_lb;
 	private ATable fileListTable;
 	private JScrollPane jlJScrollPane;
+	private JPopupMenu fileListPopupMenu;
 	private ALabel tokenChekedLabel_lb;
 //	private ATextField tokenTextField;
 	private ALabel tokenChekedLabel;
@@ -195,6 +198,7 @@ public class BaiduYunAssistant
 	private double usedSpace = 0;
 	private boolean noTaskFinishTip;
 	protected Vector<ShellCommand> waitTaskVector;
+	protected Vector<ShellCommand> taskVector;
 	protected TaskQueueThread taskQueueThread;
 	//-----------------------
 	protected Vector<String> syncFiles;
@@ -207,6 +211,7 @@ public class BaiduYunAssistant
 //	private Image splashImage;
 	private int framewidth = 900;
 	private int frameheight = 600;
+	private boolean refreshTaskTableFlag;
 
 	public BaiduYunAssistant(DataPackage datapackage) {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -241,6 +246,7 @@ public class BaiduYunAssistant
 			this.usedSpace = datapackage.usedSpace;
 			this.waitTaskVector = datapackage.waitTaskVector;
 //			this.taskQueueThread = datapackage.taskQueueThread;
+			this.taskVector = datapackage.taskVector;
 			this.fileTree = datapackage.fileTree;
 			this.syncFiles = datapackage.syncFiles;
 			this.remoteSyncFiles = datapackage.remoteSyncFiles;
@@ -250,7 +256,8 @@ public class BaiduYunAssistant
 			//-----no data, then init new parameters-------
 			syncFiles = new Vector<String>();
 			remoteSyncFiles = new Vector<String>();
-			waitTaskVector = new Vector<ShellCommand>();
+			waitTaskVector = new Vector<ShellCommand>(100);
+			taskVector = new Vector<ShellCommand>(100);
 		}
 		
 		this.setBounds((int)screenSize.getWidth()/2 - framewidth/2,
@@ -980,6 +987,7 @@ public class BaiduYunAssistant
 			datapackage.cloudSpace = this.cloudSpace;
 			datapackage.usedSpace = this.usedSpace;
 			datapackage.waitTaskVector = this.waitTaskVector;
+			datapackage.taskVector = this.taskVector;
 			datapackage.fileTree = this.fileTree;
 			datapackage.syncFiles = this.syncFiles;
 			datapackage.remoteSyncFiles = this.remoteSyncFiles;
@@ -995,10 +1003,11 @@ public class BaiduYunAssistant
 			System.out.println("Cannot open save file BYA.dat when windows closing");
 		} catch (IOException e) {
 			System.out.println("Write file failed when windows closing");
-			System.out.println(this);
+			System.out.println(datapackage);
 			e.printStackTrace();
 		} finally {
 			System.out.println("Exit window");
+//			this.setVisible(true);
 			System.exit(0);
 		}
 		
@@ -1034,9 +1043,9 @@ public class BaiduYunAssistant
 		menuBar.add(optionMenu);
 		settingsItem.addActionListener(this);
 
-		helpMenu = new AMenu("Help");
-		aboutItem = new AMenuItem("about");
-		cmdhelpItem = new AMenuItem("help", KeyEvent.VK_H);
+		helpMenu = new AMenu("帮助");
+		aboutItem = new AMenuItem("关于");
+		cmdhelpItem = new AMenuItem("帮助", KeyEvent.VK_H);
 		helpMenu.add(aboutItem);
 		helpMenu.add(cmdhelpItem);
 		menuBar.add(helpMenu);
@@ -1072,15 +1081,6 @@ public class BaiduYunAssistant
 		gbc.gridwidth = 0;
 		leftMainLayout.setConstraints(cmdfField, gbc);
 	}
-//
-//    private class AntiliasText extends JTextArea {
-//        public void paint(Graphics g) {
-//            Graphics2D g2 = (Graphics2D) g;
-//            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-//                                RenderingHints.VALUE_ANTIALIAS_ON);
-//            super.paint(g2);
-//        }
-//    }
 	
 	private void initShellCommandOutput() {
 		cmdoutputLabel = new ALabel("输出");
@@ -1155,6 +1155,9 @@ public class BaiduYunAssistant
 				return false;
 			}
 		};
+//		fileListPopupMenu = new JPopupMenu();
+//		fileListPopupMenu.add(new JMenuItem("TEST"));
+//		this.searchField.add(fileListPopupMenu);
 //		fileListTable.setEnabled(false);
 //		fileListTable.setAutoResizeMode(ATable.AUTO_RESIZE_ALL_COLUMNS);
 		
@@ -1404,6 +1407,7 @@ public class BaiduYunAssistant
 //		}
 //		this.taskTableModel.addRow(row);
 		int oldsize = waitTaskVector.size();
+		this.taskVector.add(sc);
 		this.waitTaskVector.add(sc);
 //		int i = taskTableModel.getRowCount();//waitTaskVector.indexOf(rct);
 //		rct.setIndex(i);
@@ -1423,20 +1427,55 @@ public class BaiduYunAssistant
 		
 //		return i;
 	}
-	protected void refreshTaskTable() {
-		synchronized (waitTaskVector) {
-			int oldsize = waitTaskVector.size();
-			for (ShellCommand sc:this.waitTaskVector) {
-				String index = String.valueOf(sc.hashCode());
-				java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				java.util.Date d=new java.util.Date();
-				String time = df.format(d);
-				String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
-				this.taskTableModel.addRow(row);
-			}
-			if (oldsize<1)
-				waitTaskVector.notifyAll();//提醒所有在等待waitTask的线程
+	
+	/**
+	 * 刷新任务列表，如果force==true，则会马上进行一次刷新
+	 * 若force==true，则不会马上刷新，而是等待下一次刷新一起刷新
+	 * @param force - true，进行刷新，但是不代表会马上刷新，只有当waitTaskVector的锁被
+	 * 释放时，会刷新，且如果有多个等待刷新的线程，将只会刷新一次。建议设为true。false，不会
+	 * 刷新，而是等待下一次刷新true命令被调用。
+	 */
+	protected void refreshTaskTable(boolean force) {
+		if (force) {
+			this.refreshTaskTableFlag = true;
+			refreshTaskTable();
+		} else {
+			this.refreshTaskTableFlag = true;
 		}
+	}
+	
+	private void refreshTaskTable() {
+//		synchronized (waitTaskVector) {
+//			int oldsize = waitTaskVector.size();
+//			for (ShellCommand sc:this.waitTaskVector) {
+//				String index = String.valueOf(sc.hashCode());
+//				java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+//				java.util.Date d=new java.util.Date();
+//				String time = df.format(d);
+//				String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
+//				this.taskTableModel.addRow(row);
+//			}
+//		//	if (oldsize<1)
+//			//	waitTaskVector.notifyAll();//提醒所有在等待waitTask的线程
+//		}
+		synchronized (taskVector) {
+			if (refreshTaskTableFlag) {
+	//			int oldsize = taskVector.size();
+				this.taskTableModel.setRowCount(0);
+				for (ShellCommand sc:this.taskVector) {
+					String index = String.valueOf(sc.hashCode());
+					java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+					java.util.Date d=new java.util.Date();
+					String time = df.format(d);
+					String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
+					this.taskTableModel.addRow(row);
+				}
+	//			if (oldsize<1)
+	//				waitTaskVector.notifyAll();//提醒所有在等待waitTask的线程
+				refreshTaskTableFlag = false;
+			}
+		}
+		
 	}
 	/**
 	 * @param sc remove task from the waitTaskVector,but will not kill it
@@ -1474,7 +1513,10 @@ public class BaiduYunAssistant
 		}
 		return sc;
 	}
-	
+	/**
+	 * 从等待列表删除正在等待的任务，可能是要加入运行队列，具体的状态应该由调用方决定
+	 * @param rct
+	 */
 	protected void removeWaitTask(RunCommandThread rct) {
 		synchronized(waitTaskVector) {
 			this.waitTaskVector.remove(rct.getShellCommand());
@@ -1483,8 +1525,9 @@ public class BaiduYunAssistant
 	
 	protected void addWaitTask(int index, RunCommandThread rct) {
 		synchronized(waitTaskVector) {
+			rct.getShellCommand().setStat(ShellCommand.STAT_WAIT);
 //			ShellCommand sc = new ShellCommand(rct.getC, refresh, name)
-			this.waitTaskVector.add(rct.getShellCommand());
+			this.waitTaskVector.add(index, rct.getShellCommand());
 		}
 	}
 	
@@ -1509,7 +1552,9 @@ public class BaiduYunAssistant
 		if (taskQueueThread.removeFinishedTask(rct)) {//waitTaskVector.indexOf(rct)!=-1) {
 			System.out.println("remove from BlockingQueue success");
 			this.removeTask(rct);
+			rct.getShellCommand().setStat(ShellCommand.STAT_COMPLETE);
 			//FIXME:
+			this.refreshTaskTable();
 			return;
 		} else { // mainThread is to be completed
 			this.loadingLayerUI.stop();
