@@ -211,8 +211,12 @@ public class BaiduYunAssistant
 //	private Image splashImage;
 	private int framewidth = 900;
 	private int frameheight = 600;
-	private boolean refreshTaskTableFlag;
+	private boolean refreshTaskTableFlag = false;
 
+	/**
+	 * 
+	 * @param datapackage - data to be saved, if null for a new one.
+	 */
 	public BaiduYunAssistant(DataPackage datapackage) {
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
 		
@@ -360,7 +364,7 @@ public class BaiduYunAssistant
 		
 
 		//------------启动任务队列管理------------
-		refreshTaskTable();
+		refreshTaskTable(true);
 		taskQueueThread = new TaskQueueThread(this);
 		taskQueueThread.start();
 		

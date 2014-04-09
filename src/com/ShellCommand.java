@@ -1,6 +1,7 @@
 package com;
 
 import java.io.Serializable;
+import java.util.Date;
 
 import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
@@ -14,6 +15,10 @@ public class ShellCommand implements Serializable {
 	protected String command;
 	protected String name;
 	protected boolean refresh;
+	private Date startDate;
+	private Date endDate;
+	protected int hashCode;
+	protected double percent;
 	
 	//-------命令的运行状态---------
 	public static final int STAT_RUN = 1;
@@ -62,9 +67,35 @@ public class ShellCommand implements Serializable {
 			return "Unknown";
 		}
 	}
+
+	/**
+	 * @return the startDate
+	 */
+	public Date getStartDate() {
+		return startDate;
+	}
+
+	/**
+	 * @param startDate the startDate to set
+	 */
+	public void setStartDate(Date startDate) {
+		this.startDate = startDate;
+	}
+
+	/**
+	 * @return the endDate
+	 */
+	public Date getEndDate() {
+		return endDate;
+	}
+
+	/**
+	 * @param endDate the endDate to set
+	 */
+	public void setEndDate(Date endDate) {
+		this.endDate = endDate;
+	}
 	
-//	public void setStatString(String stat) {
-//		if (stat.equals("Running"))
-//	}
+	
 
 }
