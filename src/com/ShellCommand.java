@@ -19,6 +19,9 @@ public class ShellCommand implements Serializable {
 	private Date endDate;
 	protected int hashCode;
 	protected double percent;
+	protected int fileSize;
+	protected int completeSize;
+	protected double speed;
 	
 	//-------命令的运行状态---------
 	public static final int STAT_RUN = 1;
@@ -96,6 +99,8 @@ public class ShellCommand implements Serializable {
 		this.endDate = endDate;
 	}
 	
-	
+//	public void getSpeed() {
+//		this.return 
+//	}
 
 }

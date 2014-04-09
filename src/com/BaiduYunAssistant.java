@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import javax.swing.JLayer;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
+//import javax.swing.APopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTree;
@@ -42,6 +42,7 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.WindowEvent;
@@ -54,6 +55,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import javax.swing.JOptionPane;
 
 import com.Antilias.*;
+import com.sun.org.apache.bcel.internal.generic.NEWARRAY;
 import com.sun.rowset.internal.Row;
 
 /**
@@ -159,13 +161,24 @@ public class BaiduYunAssistant
 	private ALabel jl_lb;
 	private ATable fileListTable;
 	private JScrollPane jlJScrollPane;
-	private JPopupMenu fileListPopupMenu;
 	private ALabel tokenChekedLabel_lb;
 //	private ATextField tokenTextField;
 	private ALabel tokenChekedLabel;
 	private AButton tokenRefreshButton;
 	private ALabel spaceJLabel;
 	private AProgressBar spaceBar;
+
+	//--------popupMenu-------------
+	private APopupMenu popupMenu;
+	//------file-----
+	private AMenuItem popupDelteItem;
+	private AMenuItem popupDownloadItem;
+	//-------task----
+	private AMenuItem popupCancelItem;
+	private AMenuItem popupRemoveItem;
+	private AMenuItem popupStopItem;
+	private AMenuItem popupTofirstItem;
+	private AMenuItem popupStartItem;
 	
 	/* Control Buttons */
 	private AButton refreshButton;
@@ -348,6 +361,9 @@ public class BaiduYunAssistant
 		leftContainer.add(jp1);
 		gbc.gridwidth = 0;
 		leftMainLayout.setConstraints(jp1, gbc);
+		
+		//-------init popup menu--------
+		this.initPopupMenu();
 
 		splashWindow.setText("start");
 		
@@ -530,7 +546,9 @@ public class BaiduYunAssistant
 		{
 			this.actionUploadButton();
 		}
-		else if (source.equals(downloadButton))
+		else if (source.equals(downloadButton)
+				||(source.equals(popupDownloadItem)
+				))
 		{
 			this.actionDownloadButton();
 		}
@@ -566,7 +584,8 @@ public class BaiduYunAssistant
 				e1.printStackTrace();
 			}
 		}
-		else if (source.equals(deleteButton))
+		else if (source.equals(deleteButton)
+				||source.equals(popupDelteItem))
 		{
 			this.actionDeleteButton();
 		}
@@ -1159,7 +1178,7 @@ public class BaiduYunAssistant
 				return false;
 			}
 		};
-//		fileListPopupMenu = new JPopupMenu();
+//		fileListPopupMenu = new APopupMenu();
 //		fileListPopupMenu.add(new JMenuItem("TEST"));
 //		this.searchField.add(fileListPopupMenu);
 //		fileListTable.setEnabled(false);
@@ -1383,6 +1402,40 @@ public class BaiduYunAssistant
 		taskTable.addMouseListener(this);
 	}
 	
+	private void initPopupMenu() {
+		this.popupMenu = new APopupMenu();
+		//-----file--------
+		this.popupDelteItem = new AMenuItem("删除");
+		popupDownloadItem = new AMenuItem("下载");
+		
+		popupMenu.add(popupDelteItem);
+		popupMenu.add(popupDownloadItem);
+		
+		popupDelteItem.addActionListener(this);
+		popupDownloadItem.addActionListener(this);
+
+		//------task------
+		popupCancelItem = new AMenuItem("取消");
+		popupRemoveItem = new AMenuItem("移除");
+		popupStopItem = new AMenuItem("暂停");
+		popupTofirstItem = new AMenuItem("置顶");
+		popupStartItem = new AMenuItem("开始");
+		
+		popupMenu.add(popupCancelItem);
+		popupMenu.add(popupRemoveItem);
+		popupMenu.add(popupStopItem);
+		popupMenu.add(popupTofirstItem);
+		popupMenu.add(popupStartItem);
+
+		popupCancelItem.addActionListener(this);
+		popupRemoveItem.addActionListener(this);
+		popupStopItem.addActionListener(this);
+		popupTofirstItem.addActionListener(this);
+		popupStartItem.addActionListener(this);
+		
+		popupMenu.addMouseListener(this);
+		
+	}
 
 	private void initParameters() {
 		cmdBuf = new ArrayBlockingQueue<String>(32, true);
@@ -1604,8 +1657,29 @@ public class BaiduYunAssistant
 
 
 	@Override
-	public void mousePressed(MouseEvent arg0) {
-		
+	public void mousePressed(MouseEvent e) {
+		if (e.isPopupTrigger()) {
+			if (e.getComponent().equals(taskTable)) {
+				popupDelteItem.setVisible(false);
+				popupDownloadItem.setVisible(false);
+
+				popupCancelItem.setVisible(true);
+				popupRemoveItem.setVisible(true);
+				popupStopItem.setVisible(true);
+				popupTofirstItem.setVisible(true);
+				popupStartItem.setVisible(true);
+			} else if (e.getComponent().equals(fileListTable)) {
+				popupDelteItem.setVisible(true);
+				popupDownloadItem.setVisible(true);
+
+				popupCancelItem.setVisible(false);
+				popupRemoveItem.setVisible(false);
+				popupStopItem.setVisible(false);
+				popupTofirstItem.setVisible(false);
+				popupStartItem.setVisible(false);
+			}
+			this.popupMenu.show(e.getComponent(), e.getX(), e.getY());
+		}
 	}
 
 
