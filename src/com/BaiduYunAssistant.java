@@ -49,6 +49,8 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.Vector;
 import java.util.concurrent.ArrayBlockingQueue;
 
@@ -62,9 +64,10 @@ import com.sun.rowset.internal.Row;
  * 
  * @author Junyuan Hong(GitHub:jyhong836)
  * @version 1.00
- * created with Eclipse Kepler
- * JRE version:1.7
- * OS: Linux2.6, Ubuntu10.04.3
+ * @encoding utf-8
+ * @develop created with Eclipse Kepler
+ * @jre-version 1.7
+ * @OS Linux2.6, Ubuntu10.04.3
  * 
  * FTODO:还不支持批量选择上传和下载
  * TODO：退出时进行任务检查，当还有任务时进行提示
@@ -170,10 +173,10 @@ public class BaiduYunAssistant
 
 	//--------popupMenu-------------
 	private APopupMenu popupMenu;
-	//------file-----
+	//+------file-----
 	private AMenuItem popupDelteItem;
 	private AMenuItem popupDownloadItem;
-	//-------task----
+	//+-------task----
 	private AMenuItem popupCancelItem;
 	private AMenuItem popupRemoveItem;
 	private AMenuItem popupStopItem;
@@ -213,6 +216,9 @@ public class BaiduYunAssistant
 	protected Vector<ShellCommand> waitTaskVector;
 	protected Vector<ShellCommand> taskVector;
 	protected TaskQueueThread taskQueueThread;
+	protected Timer refreshTaskTableTimer;
+	private TimerTask refreshTaskTableTimerTask = null;
+	private long refreshTaskTableSpeed = 500;//ms
 	//-----------------------
 	protected Vector<String> syncFiles;
 	protected Vector<String> remoteSyncFiles;
@@ -383,6 +389,9 @@ public class BaiduYunAssistant
 		refreshTaskTable(true);
 		taskQueueThread = new TaskQueueThread(this);
 		taskQueueThread.start();
+		//------------定时刷新任务列表的TimerTask-----
+		refreshTaskTableTimer = new Timer();
+		this.startRefreshTaskTableSchedule();
 		
 		//-----------Frame settings--------------
 		this.addWindowListener(this);
@@ -747,23 +756,25 @@ public class BaiduYunAssistant
 				if (type.equals("D")) {
 					System.out.println("downdir "+this.pwd+"/"+fileName
 							+" "+localDirName+"/"+fileName);
-					this.addTask(
-							new ShellCommand(
+					ShellCommand sc = new ShellCommand(
 //							new RunCommandThread(this, 
 							"downdir "+this.pwd+"/"+fileName
 							+" "+localDirName+"/"+fileName,
 							true,
-							"download dir:"+fileName) );
+							"download dir:"+fileName);
+//					sc.setFileMsg(localDirName+"/"+fileName, filesize);
+					this.addTask(sc);
 				} else if (type.equals("F")) {
 					System.out.println("downfile "+this.pwd+"/"+fileName
 							+" "+localDirName+"/"+fileName);
-					this.addTask(
-							new ShellCommand(
+					ShellCommand sc = new ShellCommand(
 //							new RunCommandThread(this, 
 							"downfile "+this.pwd+"/"+fileName
 							+" "+localDirName+"/"+fileName,
 							true,
-							"download file:"+fileName) );
+							"download file:"+fileName);
+					sc.setFileMsg(localDirName+"/"+fileName, Integer.valueOf((String)this.tableModel.getValueAt(row, 2)));
+					this.addTask(sc);
 				}
 			}
 		}
@@ -1501,6 +1512,31 @@ public class BaiduYunAssistant
 		}
 	}
 	
+	protected void startRefreshTaskTableSchedule() {
+		if (refreshTaskTableTimerTask==null) {
+			refreshTaskTableTimerTask = new TimerTask() {
+				
+				@Override
+				public void run() {
+					//TEST:
+//					System.out.println("[RefreshTaskTableSchedule]");
+					BaiduYunAssistant.this.refreshTaskTable(true);
+				}
+			};
+			refreshTaskTableTimer.scheduleAtFixedRate(refreshTaskTableTimerTask, 
+					refreshTaskTableSpeed, 
+					refreshTaskTableSpeed);
+		}
+			
+	}
+	
+	protected void stopRefreshTaskTableSchedule() {
+		if (refreshTaskTableTimerTask!=null) {
+			refreshTaskTableTimerTask.cancel();
+			refreshTaskTableTimerTask = null;
+		}
+	}
+	
 	private void refreshTaskTable() {
 //		synchronized (waitTaskVector) {
 //			int oldsize = waitTaskVector.size();
@@ -1520,11 +1556,8 @@ public class BaiduYunAssistant
 	//			int oldsize = taskVector.size();
 				this.taskTableModel.setRowCount(0);
 				for (ShellCommand sc:this.taskVector) {
-					String index = String.valueOf(sc.hashCode());
-					java.text.SimpleDateFormat df=new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-					java.util.Date d=new java.util.Date();
-					String time = df.format(d);
-					String row[] = {index, sc.getStatString(), sc.getTaskName(), time};
+					String index = String.valueOf(sc.hashCode);
+					String row[] = {index, sc.getStatString(), sc.getTaskName(), sc.getStartDate()};
 					this.taskTableModel.addRow(row);
 				}
 	//			if (oldsize<1)
@@ -1611,7 +1644,7 @@ public class BaiduYunAssistant
 			this.removeTask(rct);
 			rct.getShellCommand().setStat(ShellCommand.STAT_COMPLETE);
 			//FIXME:
-			this.refreshTaskTable();
+			this.refreshTaskTable(true);
 			return;
 		} else { // mainThread is to be completed
 			this.loadingLayerUI.stop();

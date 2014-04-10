@@ -32,8 +32,10 @@ public class TaskQueueThread extends Thread {
 				RunCommandThread rct;
 				ShellCommand sc;
 				synchronized(owner.waitTaskVector) {
-					while (owner.waitTaskVector.isEmpty())
+					while (owner.waitTaskVector.isEmpty()) {
+//						owner.stopRefreshTaskTableSchedule();
 						owner.waitTaskVector.wait();
+					}
 					sc = owner.waitTaskVector.elementAt(0);// owner.getWaitTask();
 				}
 				rct = new RunCommandThread(owner, sc);
@@ -41,9 +43,12 @@ public class TaskQueueThread extends Thread {
 //				RunCommandThread rct = owner.waitTaskVector.elementAt(0);
 				this.taskQueue.put(rct);
 				this.owner.removeWaitTask(rct);
+				
 				rct.start();
 				sc.setStat(ShellCommand.STAT_RUN);
-				owner.refreshTaskTable(true);
+//				owner.startRefreshTaskTableSchedule();
+				
+//				owner.refreshTaskTable(true);
 				System.out.println("start task:"+rct+sc.command);
 			} catch (InterruptedException e) {
 				System.out.println("TaskQueueThread is interrupted");
