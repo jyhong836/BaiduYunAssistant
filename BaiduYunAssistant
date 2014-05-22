@@ -1,6 +1,70 @@
 #!/bin/bash
+if [ ! -d bin ];then
+	echo "can not find bin directory. please goto the BaiduYunAssistant dir"
+	exit 1;
+fi
 cd bin
-# You can replace the "~/Development/jre1.7.0_51" with your jre folder;
-# Or just use the "java" to replace the "~/Development/jre1.7.0_51/bin/java",
-# if you have install jre and set the env well.
-~/Development/jre1.7.0_51/bin/java com.BaiduYunAssistant
+echo $PWD
+echo 'you should have python>=2.7'
+
+if [ ! -d data ] 
+then
+	echo data not exist , create data dir
+	mkdir data
+	cp ../data/*.png data/
+fi
+
+if bypy -V 2> data/info; 
+then
+	cat data/info
+else
+	echo -ne "install bypy?[Y/n]"
+	read an 
+	if [ $an = "Y" -o $an = "y" ]
+	then
+		wget https://github.com/houtianze/bypy/archive/master.zip -O ./master.zip
+		if [ -d bypy-master ];then
+			echo -ne "WARN:the bypy-master dir has exist, do you want to overwrite[o] it or remove[r] it or quit[q](default)?[o/r/q]"
+			read an
+			if [ -z $an -o $an = "q" ];then
+				echo $an
+				echo "not install bypy, quit."
+				exit 2
+			elif [ $an = "r" ];then
+				echo 
+				rm -rf bypy-master
+			elif [ $an = "o" ];then
+				unzip -o master.zip
+			fi
+		else
+			unzip master.zip
+		fi
+		rm master.zip
+		echo -ne "if your python>=2.7, and enter use default,or enter any else to set the python to /usr/bin/python2.7:"
+		read an
+		if [ $an ];then
+			sed '1s/.*/#!\/usr\/bin\/python2.7/' $PWD/bypy-master/bypy.py &> bypy.temp
+			chmod +x bypy.temp
+			mv bypy.temp $PWD/bypy-master/bypy.py
+		fi
+		if ! ln -sf $PWD/bypy-master/bypy.py /usr/local/bin/bypy;
+		then
+			echo "try use 'sudo ./BaiduYunAssistant' to run"
+			exit 3
+		fi
+		bypy -V 2> data/info
+		if [[ $? ]]; then
+			cat data/info
+		fi
+	else
+		echo "there is no bypy, can not run BaiduYunAssistant"
+		exit 1
+	fi
+	# ln -s /usr/bin/
+fi
+
+echo '====bypy help===' > data/help
+bypy >> data/help
+
+# You have to install java first
+java com.BaiduYunAssistant

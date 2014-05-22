@@ -49,6 +49,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Enumeration;
 import java.util.Properties;
+import java.util.Scanner;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Vector;
@@ -208,7 +209,10 @@ public class BaiduYunAssistant
 	public final static String dataFolderString = new String("data/");
 	private ArrayBlockingQueue<String> cmdBuf;
 	//-----------------------
-	protected String bypyArgument = "bypy ";// argument shoud be add after this
+	protected String chunk = "1024"; // can be 1024 2k 3MB
+	protected int retry = 3;
+	protected int timeout = 10;
+	private String bypyArgument = new String("bypy --chunk "+chunk+" -r "+retry+" -t "+timeout+" ");// argument shoud be add after this
 	private String pwd = "/"; // currunt pwd
 	private double cloudSpace = 0;
 	private double usedSpace = 0;
@@ -264,6 +268,7 @@ public class BaiduYunAssistant
 		{
 			this.datapackage = datapackage;
 			this.bypyArgument = datapackage.bypyArgument;
+			this.setArguementsString(bypyArgument);
 			this.pwd = datapackage.pwd;
 			this.cloudSpace = datapackage.cloudSpace;
 			this.usedSpace = datapackage.usedSpace;
@@ -516,6 +521,48 @@ public class BaiduYunAssistant
 			new BaiduYunAssistant(null);
 //			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * get bypy argumentsString, including "bypy"
+	 * @return
+	 */
+	protected String getArguementsString() {
+		return new String("bypy --chunk "+chunk+" -r "+retry+" -t "+timeout+" ");
+	}
+	
+	/**
+	 * set bypy arguements with String
+	 * @param args
+	 */
+	protected void setArguementsString(String args) {
+		Scanner sc = new Scanner(args);
+		while(sc.hasNext()) {
+			String arg = sc.next();
+			if(arg.equals("-r"))
+				this.retry = sc.nextInt();
+			else if (arg.equals("-t"))
+				this.timeout = sc.nextInt();
+			else if(arg.equals("--chunk"))
+				this.chunk = sc.next();
+		}
+		this.bypyArgument = new String(args);
+	}
+	
+	/**
+	 * 
+	 * @param chunk chunk number
+	 * @param retry retry times
+	 * @param timeout timeout
+	 * @return always true
+	 */
+	protected boolean setArgs(String chunk, int retry, int timeout) {
+		if (chunk=="1024" || chunk=="2k" || chunk=="3MB") this.chunk = chunk;
+		if(retry>=1)this.retry = retry;
+		if(timeout>=1)this.timeout = timeout;
+		this.bypyArgument = new String("bypy --chunk "+chunk+" -r "+retry+" -t "+timeout+" ");
+//		System.out.println("set arg: "+bypyArgument);
+		return true;
 	}
 	
 	private void loadingMainThread(RunCommandThread rct) {

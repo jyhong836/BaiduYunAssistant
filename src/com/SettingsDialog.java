@@ -48,12 +48,19 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 	private DefaultTableModel tableModel;
 	private ALabel syncFileLabel;
 	
-	private ALabel argumentLabel;
-	private ATextField argumentField;
+//	private ALabel argumentLabel;
+//	private ATextField argumentField;
 	
 	private AButton applyButton;
 	
 	private ACheckBox noTaskFinishTip;
+	
+	private ALabel chunkLabel;
+	private ATextField chunkField;
+	private ALabel retryLabel;
+	private ATextField retryField;
+	private ALabel timeoutLabel;
+	private ATextField timeoutField;
 	
 	private Container container;
 	private JScrollPane tableJScrollPane;
@@ -85,7 +92,8 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		refreshSyncFileTable();
 		
 		//---------init argument field----
-		initArgumentField();
+//		initArgumentField();
+		initArgumentComponents();
 		
 		//-------init noTaskFinishTip-----------
 		noTaskFinishTip = new ACheckBox("下载完成后不提醒", false);
@@ -124,7 +132,32 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		
 	}
 
-	private void initArgumentField() {
+//	// bypy 格式的参数设置
+//	private void initArgumentField() {
+//		//----------init GridBagConstraints------
+//		gbc.fill = GridBagConstraints.HORIZONTAL;
+//		gbc.gridwidth = 1;
+//		gbc.weightx = 1;
+//		gbc.weighty = 0;
+//		gbc.ipadx = 0; // 这一行最右侧的空间
+//		
+//		this.argumentLabel = new ALabel("参数");
+//		this.argumentField = new ATextField(this.owner.getArguementsString());
+//		container.add(argumentLabel);
+//		gbc.gridwidth = 1;
+//		mainLayout.setConstraints(argumentLabel, gbc);
+//		container.add(argumentField);
+//		gbc.gridwidth = 0;
+//		mainLayout.setConstraints(argumentField, gbc);
+////		addButton.addActionListener(this);
+//		
+//	}
+
+	private void initArgumentComponents() {
+		//-----------chunk-------------
+		chunkLabel = new ALabel("分块大小");
+		chunkField = new ATextField(owner.chunk);
+		
 		//----------init GridBagConstraints------
 		gbc.fill = GridBagConstraints.HORIZONTAL;
 		gbc.gridwidth = 1;
@@ -132,18 +165,54 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 		gbc.weighty = 0;
 		gbc.ipadx = 0; // 这一行最右侧的空间
 		
-		this.argumentLabel = new ALabel("参数");
-		this.argumentField = new ATextField(this.owner.bypyArgument);
-		container.add(argumentLabel);
+		container.add(chunkLabel);
 		gbc.gridwidth = 1;
-		mainLayout.setConstraints(argumentLabel, gbc);
-		container.add(argumentField);
+		mainLayout.setConstraints(chunkLabel, gbc);
+		container.add(chunkField);
 		gbc.gridwidth = 0;
-		mainLayout.setConstraints(argumentField, gbc);
-//		addButton.addActionListener(this);
+		mainLayout.setConstraints(chunkField, gbc);
+		
+
+		//-----------retry-------------
+		retryLabel = new ALabel("重试次数");
+		retryField = new ATextField(new String(""+owner.retry));
+		
+		//----------init GridBagConstraints------
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridwidth = 1;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.ipadx = 0; // 这一行最右侧的空间
+		
+		container.add(retryLabel);
+		gbc.gridwidth = 1;
+		mainLayout.setConstraints(retryLabel, gbc);
+		container.add(retryField);
+		gbc.gridwidth = 0;
+		mainLayout.setConstraints(retryField, gbc);
+
+		
+		//-----------timeout-------------
+		timeoutLabel = new ALabel("timeout");
+		timeoutField = new ATextField(new String(""+owner.timeout));
+		
+		//----------init GridBagConstraints------
+		gbc.fill = GridBagConstraints.HORIZONTAL;
+		gbc.gridwidth = 1;
+		gbc.weightx = 1;
+		gbc.weighty = 0;
+		gbc.ipadx = 0; // 这一行最右侧的空间
+		
+		container.add(timeoutLabel);
+		gbc.gridwidth = 1;
+		mainLayout.setConstraints(timeoutLabel, gbc);
+		container.add(timeoutField);
+		gbc.gridwidth = 0;
+		mainLayout.setConstraints(timeoutField, gbc);
+		
 		
 	}
-
+	
 	/**
 	 * @Method initButtons 
 	 * 		Add, Delete, DeleteAll
@@ -216,7 +285,9 @@ public class SettingsDialog extends JDialog implements ActionListener, MouseList
 			owner.remoteSyncFiles.removeAllElements();
 			this.refreshSyncFileTable();
 		} else if(source.equals(applyButton)) {
-			owner.bypyArgument = this.argumentField.getText()+" ";//防止最好少一个空格
+//			owner.bypyArgument = this.argumentField.getText()+" ";//防止最好少一个空格
+//			owner.setArguementsString(this.argumentField.getText()+" ");
+			owner.setArgs(chunkField.getText(), Integer.valueOf(retryField.getText()), Integer.valueOf(timeoutField.getText()));
 		} else if(source.equals(noTaskFinishTip)) {
 			owner.setNoTaskFinishTip(noTaskFinishTip.isSelected());
 		}
