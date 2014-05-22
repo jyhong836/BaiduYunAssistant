@@ -45,7 +45,7 @@ Paste the Authorization Code here within 10 minutes.
 
 ----
 
-请访问http://home.ustc.edu.cn/~jyhong
+请访问http://home.ustc.edu.cn/~jyhong/files/bda/
 
 
 ----
