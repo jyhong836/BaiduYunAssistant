@@ -21,6 +21,35 @@ $ ln -s <bypy.py> /usr/bin/bypy
 
 ----
 
+安装
+
+----
+
+当你第一此运行shell脚本的时候，使用root运行，将自动下载bypy，并将bypy添加到/usr/local/bin/bypy
+
+````
+sudo ./BaiduYunAssistant
+````
+第一次运行会出现如下提示
+````
+Please visit:
+https://openapi.baidu.com/oauth/2.0/authorize?scope=basic+netdisk&redirect_uri=o                                                                           ob&response_type=code&client_id=q8WE4EpCsau1oS0MplgMKNBn
+And authorize this app
+Paste the Authorization Code here within 10 minutes.
+````
+授权之后就可以使用bypy了。
+
+----
+
+演示视频
+
+----
+
+请访问http://home.ustc.edu.cn/~jyhong
+
+
+----
+
 功能说明
 
 ----
