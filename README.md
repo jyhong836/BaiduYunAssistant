@@ -28,7 +28,7 @@ $ ln -s <bypy.py> /usr/bin/bypy
 当你第一此运行shell脚本的时候，使用root运行，将自动下载bypy，并将bypy添加到/usr/local/bin/bypy
 
 ````
-sudo ./BaiduYunAssistant
+sudo ./configure
 ````
 第一次运行会出现如下提示
 ````
@@ -38,6 +38,17 @@ And authorize this app
 Paste the Authorization Code here within 10 minutes.
 ````
 授权之后就可以使用bypy了。
+
+----
+
+运行
+
+----
+
+````
+./BaiduYunAssistant.jar
+````
+生成的数据保存在./data/中
 
 ----
 
