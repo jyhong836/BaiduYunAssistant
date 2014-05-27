@@ -113,6 +113,7 @@ public class BaiduYunAssistant
 	 *  会更新UID，这里的修改仅限于类函数和变量的增减，内容的改变不会起作用
 	 */
 	private static final long serialVersionUID = 1L;//getUID();//System.currentTimeMillis();//10001L;
+	private static final String VERSION_STRING = "1.0-beta";
 	/**
 	 * generate UID specific for access token
 	 * @return 
@@ -624,7 +625,7 @@ public class BaiduYunAssistant
 		else if (source.equals(this.aboutItem))
 		{
 			JOptionPane.showMessageDialog(this, 
-					"Copyright 2014 Junyuan Hong\n  LICENSE under GPL v3");
+					"Copyright 2014 Junyuan Hong\n  LICENSE under GPL v3\n     version "+VERSION_STRING);
 		}
 		else if (source.equals(this.cmdhelpItem))
 		{
